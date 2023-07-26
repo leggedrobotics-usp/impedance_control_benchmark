@@ -48,9 +48,10 @@ Kp[3:,3:] = np.eye(3)*70 # reduce the rotational stiffness
 Kd[3:,3:] = np.sqrt(Kp[3:,3:]) * 2
 
 # Singularity Avoidance Potential
-Vm, Vm_last, dVm = 0, 0, 0
-k_sap  = 1
-m_dyn0 = 1
+Vm, Vm_last = 0, 0
+dVm = np.zeros(NV)
+k_sap  = 1.00
+m_dyn0 = 8.58e-2 # experimentally computed threshold
 
 # Nullspace joint compliance
 Kns = np.eye(NQ) * 50
@@ -72,7 +73,7 @@ ur5_payload = 5.00 # [Kg]
 fe_amp  = ur5_payload*9.81
 fe_angf = 2*pie*1.0
 tau_ext   = np.zeros(NQ)
-force_ext = np.array([0, 0, 0])
+force_ext = np.array([-fe_amp, 0, 0]) # somehow the plots are more beautiful with -fe_amp here (??)
 #static_x_expt = x_desired - np.linalg.inv(Kp).dot(force_ext)
 
 delta_t = []
@@ -95,12 +96,12 @@ try:
         sim_time = k*dt
 
         ## Compute Terms ##
-        # Compute: FK | crba | nle | Jacobians | CoM | K+U Energies...
+        # Compute: FK | crba | nle | Jacobians | CoM | K+U Energies
         pin.computeAllTerms(robot.model, robot.data, q, dq)
         M = robot.mass(q)    # get the Inertia Matrix
         h = robot.nle(q, dq) # get Nonlinear Effects (C+g)
         g = robot.gravity(q) # get Gravitational vector
-        Mi = pin.computeMinverse(robot.model, robot.data, q)
+        #Mi = pin.computeMinverse(robot.model, robot.data, q)
 
         # Get the end-effector Jacobian
         J = pin.computeFrameJacobian(robot.model, robot.data, 
@@ -119,15 +120,18 @@ try:
         rpy = pin.rpy.matrixToRpy(robot.data.oMf[end_effector].rotation) # useful to check the orientation
 
         if singularity_avd:
+            dVm = np.zeros(NV)
             # Singularity Avoidance Potential:
-            m_dyn  = math.sqrt(np.linalg.det(J @ Mi @ Mi.T @ J.T)) # manipulability measure
+            m_dyn  = math.sqrt(np.linalg.det(J @ J.T)) # manipulability measure
             if m_dyn < m_dyn0:
                 Vm = k_sap*(m_dyn - m_dyn0)**2
+                for k in range(NV):
+                    if dq[k] > 1e-6:
+                        dVm[k] = (Vm - Vm_last)/(dq[k] * sim_dt)
+                    else:
+                        dVm[k] = (1.0 -1e-6)*dVm[k]
             else:
                 Vm = 0
-            # TODO: avoid divide by zero in this Finite Difference
-            dVm = (Vm - Vm_last)/sim_dt * (1/dq)
-            dVm.clip(-1000, 1000)
             Vm_last = Vm
         
         if dynamic_ref:
@@ -151,17 +155,17 @@ try:
             # [Ott,2008]: Classical cartesian impedance Eq. 3.18
             x_err = np.concatenate([x_desired -x, pin.rpy.matrixToRpy(Ree_des @ Ree.T)])
             v_err = v_desired -v
-            force_impedance = Kp.dot(x_err) + Kd.dot(v_err)
+            impedance_force = Kp.dot(x_err) + Kd.dot(v_err)
             Ji = np.linalg.inv(J)
-            tau = g + M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + J.T @ force_impedance
+            tau = g + M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + J.T @ impedance_force
 
         if controller == 4:
             # [Ott,2008]: Classical cartesian impedance with a_d = v_d = 0
             pos_err =  x_desired - x
             rpy_err = pin.rpy.matrixToRpy(Ree_des @ Ree.T)
             err = np.concatenate([pos_err, rpy_err])
-            force_impedance = Kp.dot(err) + Kd.dot(-v)
-            tau = g + J.T @ force_impedance
+            impedance_force = Kp.dot(err) + Kd.dot(-v)
+            tau = g + J.T @ impedance_force
 
         if controller == 5:
             # Joint Space impedance (Tutorial):
@@ -182,7 +186,7 @@ try:
         
         ## Simulate Dynamics ##
         # Forward Dynamics (Articulated-Body Algorithm):
-        ddq = pin.aba(robot.model, robot.data, q, dq, tau + tau_ext)
+        ddq = pin.aba(robot.model, robot.data, q, dq, tau + tau_ext + dVm)
         # Integration:
         dq = dq + dt * ddq
         q  = pin.integrate(robot.model, q, dt*dq)
