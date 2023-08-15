@@ -33,13 +33,16 @@ tau = np.zeros(robot.model.nq)
 
 # Cartesian Impedance Control
 Kd = np.eye(6) * 6000                           # Stiffness
-Md = np.diag([9.2, 9.2, 9.2, .18, .18, .18])    # Inertia
+Kd[3:,3:] = np.eye(3)*100 # reduce the rotational stiffness
+wn = np.eye(6) * 25
+Md = Kd @ np.linalg.inv(wn @ wn.T)              # M = K/w²
+#Md = np.diag([9.2, 9.2, 9.2, .18, .18, .18])    # Inertia
 Md_inv = np.linalg.inv(Md)
 # Rotational Impedance (Roll, Pitch, Yaw):
 Ree_des = pin.rpy.rpyToMatrix(0, 0, 0)
-Kd[3:,3:] = np.eye(3)*100 # reduce the rotational stiffness
-# Critically Damped design zeta = 1 => D = 2*sqrt(K*M):
-Dd = 2 * np.sqrt(Kd @ Md)                       # Damping
+# Damping design, D = 2 * sqrt(K*M) * zeta:
+zeta = 1.0 # 0.5 | 0.7 | 1.0
+Dd = 2 * np.sqrt(Kd @ Md) * zeta                 # Damping
 
 #x_desired = np.array([0.484, 0.500, 0.1])
 # Initiate the x_des according to the q0
@@ -60,7 +63,7 @@ Dns = np.sqrt(Kns) * 2
 q_desired = q
 
 # Simulation parameters
-sim_duration = 3.00 # [s]
+sim_duration = 4.00 # [s]
 sim_dt = 0.001      # [s]
 sim_steps = int(sim_duration/sim_dt)
 # Choose the impedance controller
@@ -69,7 +72,7 @@ singularity_avd = False
 dynamic_ref = False
 
 # Disturbance
-disturbance_t = 0.05
+disturbance_t = 0.01
 ur5_payload = 5.00 # [Kg]
 fe_amp  = 9.80665*ur5_payload
 fe_angf = 3.00     # [Hz]
