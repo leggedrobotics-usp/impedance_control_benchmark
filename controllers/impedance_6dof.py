@@ -32,20 +32,21 @@ dq =  np.zeros(robot.model.nv)
 tau = np.zeros(robot.model.nq)
 
 # Cartesian Impedance Control
-Kp = np.eye(6) * 5000
-Kd = np.sqrt(Kp) * 2
+Kd = np.eye(6) * 6000                           # Stiffness
+Md = np.diag([9.2, 9.2, 9.2, .18, .18, .18])    # Inertia
+Md_inv = np.linalg.inv(Md)
+# Rotational Impedance (Roll, Pitch, Yaw):
+Ree_des = pin.rpy.rpyToMatrix(0, 0, 0)
+Kd[3:,3:] = np.eye(3)*100 # reduce the rotational stiffness
+# Critically Damped design zeta = 1 => D = 2*sqrt(K*M):
+Dd = 2 * np.sqrt(Kd @ Md)                       # Damping
+
 #x_desired = np.array([0.484, 0.500, 0.1])
 # Initiate the x_des according to the q0
 pin.forwardKinematics(robot.model, robot.data, q)
 x_desired = robot.framePlacement(q, end_effector).translation 
 v_desired = np.zeros(6)
 a_desired = np.zeros(6)
-
-# Rotational Impedance:
-# Roll, Pitch, Yaw:
-Ree_des = pin.rpy.rpyToMatrix(0, 0, 0)
-Kp[3:,3:] = np.eye(3)*70 # reduce the rotational stiffness
-Kd[3:,3:] = np.sqrt(Kp[3:,3:]) * 2
 
 # Singularity Avoidance Potential
 Vm, Vm_last = 0, 0
@@ -59,34 +60,32 @@ Dns = np.sqrt(Kns) * 2
 q_desired = q
 
 # Simulation parameters
-sim_duration = 3.50 # [s]
+sim_duration = 3.00 # [s]
 sim_dt = 0.001      # [s]
 sim_steps = int(sim_duration/sim_dt)
 # Choose the impedance controller
-controller = 3
+controller = 2
 singularity_avd = False
-dynamic_ref = True
+dynamic_ref = False
 
 # Disturbance
-disturbance_t = 0.5
+disturbance_t = 0.05
 ur5_payload = 5.00 # [Kg]
-fe_amp  = ur5_payload*9.81
-fe_angf = 2*pie*1.0
+fe_amp  = 9.80665*ur5_payload
+fe_angf = 3.00     # [Hz]
 tau_ext   = np.zeros(NQ)
-force_ext = np.array([-fe_amp, 0, 0]) # somehow the plots are more beautiful with -fe_amp here (??)
-#static_x_expt = x_desired - np.linalg.inv(Kp).dot(force_ext)
+force_ext = np.array([-fe_amp, 0, 0, 0, 0, 0]) # somehow the plots are more beautiful with -fe_amp here (??)
+#static_x_expt = x_desired - np.linalg.inv(Kd).dot(force_ext)
 
 delta_t = []
-avg_freq = 0
-check_jinv = []
-nan_jinv = False
 JTpinv = np.zeros((3, NQ)) # 
 
 # Logging
 plotting = True
-log_fee = []
-log_xee = []
-log_vee = []
+log_fee  = []
+log_xee  = []
+log_vee  = []
+log_time = []
 
 try:
     print(f'Simulation started, Controller {controller}. Press CTRL+C to stop.')
@@ -144,6 +143,11 @@ try:
             v_desired[2] =  (2*pie*ref_freq) * ref_ampl * math.cos(mov_ee_angle)
             a_desired[1] = -(2*pie*ref_freq)**2 * ref_ampl * math.cos(mov_ee_angle)
             a_desired[2] = -(2*pie*ref_freq)**2 * ref_ampl * math.sin(mov_ee_angle)
+
+        # Disturbance:
+        if sim_time > disturbance_t:
+            force_ext[0] = -fe_amp * math.sin(fe_angf * sim_time)
+            tau_ext = J.T @ force_ext
         
         ## Control ##
         # TODO: def functions for each controller       
@@ -151,20 +155,29 @@ try:
         if controller == 0:     # No controller
             tau = np.zeros(NQ) + h
         
-        if controller == 3:
-            # [Ott,2008]: Classical cartesian impedance Eq. 3.18
+        if controller == 2:
+            # [Ott,2008]: Classical Impedance Controler Eq. 3.14
             x_err = np.concatenate([x_desired -x, pin.rpy.matrixToRpy(Ree_des @ Ree.T)])
             v_err = v_desired -v
-            impedance_force = Kp.dot(x_err) + Kd.dot(v_err)
+            impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
+            Ji = np.linalg.inv(J)
+            IR = M @ Md_inv # Inertial Ratio
+            tau = g + M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + (J.T @ IR) @ (impedance_force + force_ext) - J.T @ force_ext
+
+        if controller == 3:
+            # [Ott,2008]: Classical Impedance Controler (No Inertia) Eq. 3.18
+            x_err = np.concatenate([x_desired -x, pin.rpy.matrixToRpy(Ree_des @ Ree.T)])
+            v_err = v_desired -v
+            impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             Ji = np.linalg.inv(J)
             tau = g + M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + J.T @ impedance_force
 
         if controller == 4:
-            # [Ott,2008]: Classical cartesian impedance with a_d = v_d = 0
+            # [Ott,2008]: Classical Impedance Controler with a_d = v_d = 0
             pos_err =  x_desired - x
             rpy_err = pin.rpy.matrixToRpy(Ree_des @ Ree.T)
             err = np.concatenate([pos_err, rpy_err])
-            impedance_force = Kp.dot(err) + Kd.dot(-v)
+            impedance_force = Kd.dot(err) + Dd.dot(-v)
             tau = g + J.T @ impedance_force
 
         if controller == 5:
@@ -173,16 +186,6 @@ try:
             Dq = np.sqrt(Kq) * 2
             tau_impedance = Kq.dot(q_desired -q) + Dq.dot(-dq)
             tau = g + tau_impedance
-
-        check_jinv.append(nan_jinv)
-        
-        #tau[0] = 0.5 * math.sin( 2 * pie * 0.4 * sim_time)
-        #tau = tau + h -0.2*dq
-
-        # Disturbance:
-        if sim_time > disturbance_t:
-            force_ext[0] = -fe_amp * math.sin(fe_angf * sim_time)
-            tau_ext = J[:3,:].T @ force_ext
         
         ## Simulate Dynamics ##
         # Forward Dynamics (Articulated-Body Algorithm):
@@ -197,16 +200,13 @@ try:
         log_fee.append(-force_ext[0])
         log_xee.append(x_desired[0] - x[0])
         log_vee.append(v_desired[0] - v[0])
-        #log_fee.append(m_kin)
-        #log_xee.append(sim_time)
+        log_time.append(sim_time)
     # Check how long it take to run the simulation
     ellapsed_time = tm.time() - tic
     print(f'\nSimulation ended. ({ellapsed_time:.2f} s)\n') # :.2f formatting float with 2 decimals
-    print(any(check_jinv))
 
 except KeyboardInterrupt:
     # Stop loop with CTRL+C
-    print(any(check_jinv))
     exit
 
 if plotting:
@@ -246,6 +246,6 @@ if plotting:
 # # from scipy.linalg import eigh
 # A = J @ np.linalg.inv(M)
 # Lambda = np.linalg.inv(A @ J.T)
-# Bo, B = eigh(Kp[:3, :3], Lambda)
+# Bo, B = eigh(Kd[:3, :3], Lambda)
 # D = 2 * B.T @ np.diag(1.0*np.sqrt(Bo)) @ B # damping factor = 1.0
-# Kd[:3,:3] = D
+# Dd[:3,:3] = D
