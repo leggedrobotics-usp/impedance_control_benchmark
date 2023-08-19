@@ -28,12 +28,12 @@ end_effector = robot.model.getFrameId('ee_link')
 q =   np.array([0.00, -1.00, 1.00, -pie, -pie/2, 0])
 #q =   np.array([0, -1.10, 1.10, 0, pie/2, 0])
 #q =   np.array([-pie/6, -1.10, 1.10, 0, pie/2-pie/6, 0])
-dq =  np.zeros(robot.model.nv)
+dq  =  np.zeros(robot.model.nv)
+ddq =  np.zeros(robot.model.nv)
 tau = np.zeros(robot.model.nq)
 
 # Cartesian Impedance Control
-Kd = np.eye(6) * 6000                           # Stiffness
-Kd[3:,3:] = np.eye(3)*100 # reduce the rotational stiffness
+Kd = np.diag([1000, 7000, 7000, 200, 200, 200])  # Stiffness
 wn = np.eye(6) * 25
 Md = Kd @ np.linalg.inv(wn @ wn.T)              # M = K/w²
 #Md = np.diag([9.2, 9.2, 9.2, .18, .18, .18])    # Inertia
@@ -60,7 +60,9 @@ m_dyn0 = 8.58e-2 # experimentally computed threshold
 # Nullspace joint compliance
 Kns = np.eye(NQ) * 50
 Dns = np.sqrt(Kns) * 2
-q_desired = q
+q_des   = q
+dq_des  = np.zeros(robot.model.nv)
+ddq_des = np.zeros(robot.model.nv)
 
 # Simulation parameters
 sim_duration = 4.00 # [s]
@@ -85,10 +87,15 @@ JTpinv = np.zeros((3, NQ)) #
 
 # Logging
 plotting = True
-log_fee  = []
-log_xee  = []
-log_vee  = []
-log_time = []
+savefile = False
+log_fee  = []   # force_ext logging data
+log_xee  = []   # ee pos error logging data
+log_vee  = []   # ee vel error logging data
+log_aee  = []   # ee acc error logging data
+log_time = []   # time logging data
+# Log JS states
+log_torque =  []
+log_joints =  []
 
 try:
     print(f'Simulation started, Controller {controller}. Press CTRL+C to stop.')
@@ -113,13 +120,14 @@ try:
         dJ = pin.frameJacobianTimeVariation(robot.model, robot.data, 
                                             q, dq, end_effector, pin.ReferenceFrame.LOCAL) 
 
-        # Get the end-effector frame position and velocity w.r.t. the WF
+        # Get ee kinematic data:
         pin.updateFramePlacement(robot.model, robot.data, end_effector)   
         x = robot.data.oMf[end_effector].translation            # 3x1     
-        v = J @ dq # using the definiton of J (numpy product @) # 6x1
+        v = J @ dq # using J definition (numpy product @)       # 6x1
+        ddx = dJ @ dq + J @ ddq
 
         Ree = robot.data.oMf[end_effector].rotation
-        rpy = pin.rpy.matrixToRpy(robot.data.oMf[end_effector].rotation) # useful to check the orientation
+        rpy = pin.rpy.matrixToRpy(robot.data.oMf[end_effector].rotation) # useful for orientation check
 
         if singularity_avd:
             dVm = np.zeros(NV)
@@ -185,9 +193,12 @@ try:
 
         if controller == 5:
             # Joint Space impedance (Tutorial):
-            Kq = np.diag([1000, 1000, 500, 500, 100, 100])
-            Dq = np.sqrt(Kq) * 2
-            tau_impedance = Kq.dot(q_desired -q) + Dq.dot(-dq)
+            #Kq = np.diag([2500, 600, 600, 500, 500, 200])
+            Kq = np.eye(6) * 700
+            wq = np.eye(6) * 250
+            Mq = Kq @ np.linalg.inv(wq @ wq.T)
+            Dq = 2 * np.sqrt(Kq @ Mq)           # zeta = 1
+            tau_impedance = Kq.dot(q_des -q) + Dq.dot(dq_des -dq) + Mq.dot(ddq_des -ddq)
             tau = g + tau_impedance
         
         ## Simulate Dynamics ##
@@ -200,10 +211,14 @@ try:
         viz.display(q)
 
         ## Logging ##
+        log_time.append(sim_time)
         log_fee.append(-force_ext[0])
         log_xee.append(x_desired[0] - x[0])
         log_vee.append(v_desired[0] - v[0])
-        log_time.append(sim_time)
+        log_aee.append(a_desired[0] - ddx[0])
+
+        log_joints.append(q)
+        log_torque.append(tau)
     # Check how long it take to run the simulation
     ellapsed_time = tm.time() - tic
     print(f'\nSimulation ended. ({ellapsed_time:.2f} s)\n') # :.2f formatting float with 2 decimals
@@ -222,6 +237,16 @@ if plotting:
     ax.plot(log_xee, log_vee, log_fee)
     plt.show(block=False)
 
+if savefile:
+    # Save log files (.npy)
+    np.save('plots/ts_data', np.array([log_time, log_xee, log_vee, log_fee, log_aee]).T )
+
+    time =   np.array([log_time]).T
+    joints = np.array(log_joints)
+    torque = np.array(log_torque)
+    js_log = np.hstack((time, joints, torque))
+    np.save('plots/js_data',js_log)
+    # use np.load to import data on the plotting script
 
 # We should solve the Nullspace and singularity separately
 # About Nullspace projection:
