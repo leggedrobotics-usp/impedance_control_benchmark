@@ -1,8 +1,6 @@
-#   This code intends to simple execution of a impedance control on a robotic manipulator
-#   and assure the pinocchio functionallity prior to further developments.
-#   It means to be as simple as possible: no logging, no plots, minimal variables... 
+#   Test Pinocchio execution
 #   Leonardo F. dos Santos, 2023 | qleonardolp
-#   Run on interactive mode: python3 -i sim_dynamics_simple.py
+#   Run on interactive mode: $ python3 -i pinocchio_meshcat.py
 import pinocchio as pin
 import numpy as np
 import time as tm
@@ -13,7 +11,7 @@ from math import pi as pie
 from pinocchio.visualize import MeshcatVisualizer
 from example_robot_data  import load
 
-robot_name = 'ur5' # or panda
+robot_name = 'ur5'
 robot = load(robot_name)
 viz   = MeshcatVisualizer()
 
