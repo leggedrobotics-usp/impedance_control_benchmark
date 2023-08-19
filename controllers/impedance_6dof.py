@@ -1,4 +1,4 @@
-#   Classical Impedance Control - 6 DoF: Translational + Rotational
+#   Classical Impedance Controller - 6 DoF: Translational + Rotational
 #   Leonardo F. dos Santos, 2023 | qleonardolp
 #   REMEMBER: run on interactive mode (MeshcatVisualizer): 
 #   python3 -i impedance_6dof.py
@@ -228,7 +228,6 @@ if plotting:
 # https://robotics.stackexchange.com/questions/23600/redundancy-and-null-space-projection
 # About UR5 singularities:
 # https://www.universal-robots.com/articles/ur/application-installation/what-is-a-singularity/
-# SVD convergence is sensitve to initial condition (q0 must be different from 0) 
 
 # Robot Model in Joint Space:
 # M(q) * ddq + C(q,dq) * dq + g(q) = tau + tau_ext
