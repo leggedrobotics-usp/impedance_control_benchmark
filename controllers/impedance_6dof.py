@@ -34,8 +34,8 @@ tau = np.zeros(robot.model.nq)
 
 # Cartesian Impedance Control
 Kd = np.diag([1000, 7000, 7000, 200, 200, 200])  # Stiffness
-wn = np.eye(6) * 25
-Md = Kd @ np.linalg.inv(wn @ wn.T)              # M = K/w²
+wn = np.diag([250, 50, 50, 30, 30, 30])          # natural freq.
+Md = Kd @ np.linalg.inv(wn @ wn.T)               # M = K/w²
 #Md = np.diag([9.2, 9.2, 9.2, .18, .18, .18])    # Inertia
 Md_inv = np.linalg.inv(Md)
 # Rotational Impedance (Roll, Pitch, Yaw):
@@ -173,7 +173,8 @@ try:
             impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             Ji = np.linalg.inv(J)
             IR = M @ Md_inv # Inertial Ratio
-            tau = g + M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + (J.T @ IR) @ (impedance_force + force_ext) - J.T @ force_ext
+            tau = M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + (J.T @ IR) @ (impedance_force + force_ext) - J.T @ force_ext
+            # g(q) is on FD line...
 
         if controller == 3:
             # [Ott,2008]: Classical Impedance Controler (No Inertia) Eq. 3.18
@@ -181,7 +182,8 @@ try:
             v_err = v_desired -v
             impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             Ji = np.linalg.inv(J)
-            tau = g + M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + J.T @ impedance_force
+            tau = M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + J.T @ impedance_force
+            # g(q) is on FD line...
 
         if controller == 4:
             # [Ott,2008]: Classical Impedance Controler with a_d = v_d = 0
@@ -189,21 +191,22 @@ try:
             rpy_err = pin.rpy.matrixToRpy(Ree_des @ Ree.T)
             err = np.concatenate([pos_err, rpy_err])
             impedance_force = Kd.dot(err) + Dd.dot(-v)
-            tau = g + J.T @ impedance_force
+            tau = J.T @ impedance_force
+            # g(q) is on FD line...
 
         if controller == 5:
             # Joint Space impedance (Tutorial):
-            #Kq = np.diag([2500, 600, 600, 500, 500, 200])
-            Kq = np.eye(6) * 700
+            Kq = np.diag([1000, 1000, 1000, 500, 500, 200])
             wq = np.eye(6) * 250
             Mq = Kq @ np.linalg.inv(wq @ wq.T)
             Dq = 2 * np.sqrt(Kq @ Mq)           # zeta = 1
             tau_impedance = Kq.dot(q_des -q) + Dq.dot(dq_des -dq) + Mq.dot(ddq_des -ddq)
-            tau = g + tau_impedance
+            tau = tau_impedance
+            # g(q) is on FD line...
         
         ## Simulate Dynamics ##
         # Forward Dynamics (Articulated-Body Algorithm):
-        ddq = pin.aba(robot.model, robot.data, q, dq, tau + tau_ext + dVm)
+        ddq = pin.aba(robot.model, robot.data, q, dq, tau + g + tau_ext + dVm)
         # Integration:
         dq = dq + dt * ddq
         q  = pin.integrate(robot.model, q, dt*dq)
@@ -247,6 +250,7 @@ if savefile:
     js_log = np.hstack((time, joints, torque))
     np.save('plots/js_data',js_log)
     # use np.load to import data on the plotting script
+    print('Logs saved!')
 
 # We should solve the Nullspace and singularity separately
 # About Nullspace projection:
