@@ -49,11 +49,6 @@ for j in range(len(params)):
         Tx, Ty, Tz = transforms(params[j])
         curves[k, j, :] = Tx @ Ty @ Tz @ np.array([Fo*math.cos(wu*k*dt), Fo*math.sin(wu*k*dt), 0]).T
 
-
-
-
-
-
 t_offset = 700      # samples [dt = 0.001 s]
 # Task-space Impedance Controller
 time =   tsdata_timp[t_offset:,0]   # [s]
