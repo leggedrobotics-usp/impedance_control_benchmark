@@ -17,7 +17,7 @@ name: Pysa
 on:
   workflow_dispatch:
   push:
-    branches: [ "master" ]
+    branches: [ "develop" ]
   pull_request:
     branches: [ "master" ]
   schedule:
