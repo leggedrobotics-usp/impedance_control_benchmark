@@ -6,10 +6,22 @@ The aim is to increase the reachability using this programming language without 
 
 ## Installation and Dependencies
 
-1. Python 3
-2. Pinocchio
-3. Matplotlib
-4. Numpy
+The source code was developed with the following libraries and their respective versions:
+
+1. Python 3.10
+2. [Pinocchio](https://stack-of-tasks.github.io/pinocchio/download.html#Install_1) 2.6.20
+3. Matplotlib 3.6.2
+4. Numpy 1.23.5
+
+Versions are strongly recommended, but not strictly. Following, clone this repo:
+```sh
+git clone git@github.com:leggedrobotics-usp/impedance_control_benchmark.git
+```
+This is it!
+
+## Usage
+
+WIP
 
 ## Contributing
 1. Fork
@@ -24,4 +36,4 @@ Copyright and license notices must be preserved. Contributors provide an express
 
 ## Funding
 
-São Paulo Research Foundation (FAPESP), grant number 2021/09244-6.
+São Paulo Research Foundation (FAPESP), grant numbers 2018/15472-9, and 2021/09244-6.
