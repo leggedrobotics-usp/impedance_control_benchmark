@@ -6,7 +6,7 @@ The aim is to increase the reachability using this programming language without 
 
 ## Installation and Dependencies
 
-The source code was developed with the following libraries and their respective versions:
+The source code was developed on Ubuntu 22.04 with:
 
 1. Python 3.10
 2. [Pinocchio](https://stack-of-tasks.github.io/pinocchio/download.html#Install_1) 2.6.20
