@@ -6,7 +6,7 @@ from matplotlib import rcParams
 
 rcParams["axes.labelpad"] = 0
 
-from transforms_funct import *
+from plots.transforms_function import *
 
 # font dictionary to standardize
 font = {
