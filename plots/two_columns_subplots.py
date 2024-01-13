@@ -3,7 +3,7 @@ from matplotlib import rcParams
 
 rcParams["axes.labelpad"] = 0
 
-from transforms_funct import *
+from plots.transforms_function import *
 from math import pi as pie
 import numpy as np
 
