@@ -236,13 +236,13 @@ if plotting:
     plt.show(block=False)
 
 if savefile:
-    # Save log files (.npy)
-    np.save('plots/ts_data', np.array([log_time, log_xee, log_vee, log_fee, log_aee]).T )
+    #TODO(qleonardolp): data and hour on the file name
+    np.save('data/ts_data', np.array([log_time, log_xee, log_vee, log_fee, log_aee]).T )
 
     time =   np.array([log_time]).T
     joints = np.array(log_joints)
     torque = np.array(log_torque)
     js_log = np.hstack((time, joints, torque))
-    np.save('plots/js_data',js_log)
+    np.save('data/js_data',js_log)
     # use np.load to import data on the plotting script
     print('Logs saved!')

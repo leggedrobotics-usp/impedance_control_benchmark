@@ -50,7 +50,7 @@ for j in range(len(params)):
         curves[k, j, :] = Tx @ Ty @ Tz @ np.array([Fo*math.cos(wu*k*dt), Fo*math.sin(wu*k*dt), 0]).T
 
 check_plot  = False
-threeD_plot = False
+threeD_plot = True
 
 # Test Plot (Plot x(t) vs F(t) for K=100, K=200, K=300)
 if check_plot:

@@ -8,10 +8,10 @@ import numpy as np
 
 rad2deg  = 180/pie
 # Import logs
-jsdata_jimp = np.load('plots/js_data_jointimp.npy')
-tsdata_jimp = np.load('plots/ts_data_jointimp.npy')
-jsdata_timp = np.load('plots/js_data_taskimp.npy')
-tsdata_timp = np.load('plots/ts_data_taskimp.npy')
+jsdata_jimp = np.load('data/js_data_jointimp.npy')
+tsdata_jimp = np.load('data/ts_data_jointimp.npy')
+jsdata_timp = np.load('data/js_data_taskimp.npy')
+tsdata_timp = np.load('data/ts_data_taskimp.npy')
 
 
 ts_color = '#2166ac'
