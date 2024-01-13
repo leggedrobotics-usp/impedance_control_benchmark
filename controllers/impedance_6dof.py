@@ -26,8 +26,6 @@ NQ, NV = robot.model.nq, robot.model.nv
 end_effector = robot.model.getFrameId('ee_link')
 
 q =   np.array([0.00, -1.00, 1.00, -pie, -pie/2, 0])
-#q =   np.array([0, -1.10, 1.10, 0, pie/2, 0])
-#q =   np.array([-pie/6, -1.10, 1.10, 0, pie/2-pie/6, 0])
 dq  =  np.zeros(robot.model.nv)
 ddq =  np.zeros(robot.model.nv)
 tau = np.zeros(robot.model.nq)
@@ -44,7 +42,6 @@ Ree_des = pin.rpy.rpyToMatrix(0, 0, 0)
 zeta = 1.0 # 0.5 | 0.7 | 1.0
 Dd = 2 * np.sqrt(Kd @ Md) * zeta                 # Damping
 
-#x_desired = np.array([0.484, 0.500, 0.1])
 # Initiate the x_des according to the q0
 pin.forwardKinematics(robot.model, robot.data, q)
 x_desired = robot.framePlacement(q, end_effector).translation 
@@ -110,7 +107,6 @@ try:
         M = robot.mass(q)    # get the Inertia Matrix
         h = robot.nle(q, dq) # get Nonlinear Effects (C+g)
         g = robot.gravity(q) # get Gravitational vector
-        #Mi = pin.computeMinverse(robot.model, robot.data, q)
 
         # Get the end-effector Jacobian
         J = pin.computeFrameJacobian(robot.model, robot.data, 
@@ -160,8 +156,7 @@ try:
             force_ext[0] = -fe_amp * math.sin(fe_angf * sim_time)
             tau_ext = J.T @ force_ext
         
-        ## Control ##
-        # TODO: def functions for each controller       
+        ## Control ## 
 
         if controller == 0:     # No controller
             tau = np.zeros(NQ) + h
@@ -174,7 +169,7 @@ try:
             Ji = np.linalg.inv(J)
             IR = M @ Md_inv # Inertial Ratio
             tau = M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + (J.T @ IR) @ (impedance_force + force_ext) - J.T @ force_ext
-            # g(q) is on FD line...
+            # g(q) is on Forward Dynamics line
 
         if controller == 3:
             # [Ott,2008]: Classical Impedance Controler (No Inertia) Eq. 3.18
@@ -183,7 +178,7 @@ try:
             impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             Ji = np.linalg.inv(J)
             tau = M @ J @ a_desired + (h-g -M @ Ji @ dJ) @ Ji @ v_desired + J.T @ impedance_force
-            # g(q) is on FD line...
+            # g(q) is on Forward Dynamics line
 
         if controller == 4:
             # [Ott,2008]: Classical Impedance Controler with a_d = v_d = 0
@@ -192,7 +187,7 @@ try:
             err = np.concatenate([pos_err, rpy_err])
             impedance_force = Kd.dot(err) + Dd.dot(-v)
             tau = J.T @ impedance_force
-            # g(q) is on FD line...
+            # g(q) is on Forward Dynamics line
 
         if controller == 5:
             # Joint Space impedance (Tutorial):
@@ -202,7 +197,7 @@ try:
             Dq = 2 * np.sqrt(Kq @ Mq)           # zeta = 1
             tau_impedance = Kq.dot(q_des -q) + Dq.dot(dq_des -dq) + Mq.dot(ddq_des -ddq)
             tau = tau_impedance
-            # g(q) is on FD line...
+            # g(q) is on Forward Dynamics line
         
         ## Simulate Dynamics ##
         # Forward Dynamics (Articulated-Body Algorithm):
@@ -222,20 +217,20 @@ try:
 
         log_joints.append(q)
         log_torque.append(tau)
-    # Check how long it take to run the simulation
+
     ellapsed_time = tm.time() - tic
-    print(f'\nSimulation ended. ({ellapsed_time:.2f} s)\n') # :.2f formatting float with 2 decimals
+    print(f'\nSimulation ended. ({ellapsed_time:.2f} s)\n')
 
 except KeyboardInterrupt:
-    # Stop loop with CTRL+C
     exit
 
 if plotting:
     plt.figure()
     plt.plot(log_xee, log_fee)
     plt.grid()
-    plt.show(block=False) # figure wont close running in interactive mode
-    # 3D plot:
+    # figure wont close running in interactive mode
+    plt.show(block=False) 
+    
     ax = plt.figure().add_subplot(projection='3d')
     ax.plot(log_xee, log_vee, log_fee)
     plt.show(block=False)
@@ -251,32 +246,3 @@ if savefile:
     np.save('plots/js_data',js_log)
     # use np.load to import data on the plotting script
     print('Logs saved!')
-
-# We should solve the Nullspace and singularity separately
-# About Nullspace projection:
-# https://robotics.stackexchange.com/questions/23600/redundancy-and-null-space-projection
-# About UR5 singularities:
-# https://www.universal-robots.com/articles/ur/application-installation/what-is-a-singularity/
-
-# Robot Model in Joint Space:
-# M(q) * ddq + C(q,dq) * dq + g(q) = tau + tau_ext
-
-# Robot Model in Task Space (Ott, 2008, item 3.1.2)
-# Lambda(x) * ddx + u(x,dx) * dx + J(q)^{-T} * g(q) = J(q)^{-T} * tau + F_ext
-# J(q)^{-T} * g(q) is also known as F_g(x) and J(q)^{-T} = F_tau
-# Lambda(x) = J(q)^{-T} * M(q) * J(q)^{-1}
-# u(x,dx)   = J(q)^{-T} * [C(q,dq) - M(q) * J(q)^{-1} * dJ(q)] * J(q)^{-1}
-#
-# Jacobian inverse can be avoided to be computed by the following identity:
-# (A*B)^{-1} = B^-1 * A^-1 (A and B must have inverse...)
-# Then:
-# M(q) * J(q)^{-1} = [J(q) * M(q)^-1]^-1
-# Lambda(x) = (J * M^-1 * J.T)^1
-
-# # Compute the Damping Matrix (Ott, 2008, 3.3):
-# # from scipy.linalg import eigh
-# A = J @ np.linalg.inv(M)
-# Lambda = np.linalg.inv(A @ J.T)
-# Bo, B = eigh(Kd[:3, :3], Lambda)
-# D = 2 * B.T @ np.diag(1.0*np.sqrt(Bo)) @ B # damping factor = 1.0
-# Dd[:3,:3] = D
