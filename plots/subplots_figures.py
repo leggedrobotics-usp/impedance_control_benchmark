@@ -66,6 +66,7 @@ ax3 = plt.subplot2grid((subplot_rows, subplot_cols), (0,1), rowspan=2, projectio
 ax3.set_proj_type("ortho")
 ax3.plot(task_impedance_ts[:, 1], task_impedance_ts[:, 2], task_impedance_ts[:, 3], color=ts_color)
 ax3.plot(joint_impedance_ts[:, 1], joint_impedance_ts[:, 2], joint_impedance_ts[:, 3], color=js_color)
+ax3.view_init(elev=20, azim=-20)
 
 ax3.set_xlabel("$e_x$", fontdict=font)
 ax3.set_ylabel("$\dot{e}_x$", fontdict=font)
