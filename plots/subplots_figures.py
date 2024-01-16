@@ -12,8 +12,8 @@ joint_impedance_ts = numpy.load("data/ts_data_jointimp.npy")[t_begin:, :]
 task_impedance_js = numpy.load("data/js_data_taskimp.npy")[t_begin:, :]
 task_impedance_ts = numpy.load("data/ts_data_taskimp.npy")[t_begin:, :]
 
-ts_color = "#1f78b4"  # colormaps['tab20b'](1)
-js_color = "#33a02c"  # colormaps['tab20b'](13)
+ts_color = colormaps['tab20b'](1)
+js_color = colormaps['tab20b'](9)
 font = {
     "family": "serif",
     "math_fontfamily": "cm",
@@ -37,7 +37,7 @@ ax1 = plt.subplot2grid(
     (subplot_rows, subplot_cols), (1, 0), colspan=1, xticklabels=[], yticklabels=[]
 )
 ax1.plot(task_impedance_ts[:, 1], task_impedance_ts[:, 3], color=ts_color)
-ax1.plot(joint_impedance_ts[:, 1], joint_impedance_ts[:, 3], color=js_color)
+ax1.plot(joint_impedance_ts[:, 1], joint_impedance_ts[:, 3], color=js_color, linestyle="--")
 ax1.set_xlabel("$e_x$", fontdict=font)
 ax1.set_ylabel("$f_{int}$", fontdict=font)
 
@@ -48,13 +48,12 @@ ax2 = plt.subplot2grid(
 ax2.plot(
     rad2deg * task_impedance_js[:, joint],
     task_impedance_js[:, joint + 6],
-    color=ts_color,
-    linestyle="--",
+    color=colormaps['tab20b'](2),
 )
 ax2.plot(
     rad2deg * joint_impedance_js[:, joint],
     joint_impedance_js[:, joint + 6],
-    color=js_color,
+    color=colormaps['tab20b'](10),
     linestyle="--",
 )
 ax2.set_xlabel("$q$", fontdict=font)
@@ -83,6 +82,7 @@ ax3.plot(
     joint_impedance_ts[:, 2],
     joint_impedance_ts[:, 3],
     color=js_color,
+    linestyle="--",
 )
 ax3.set_xlabel("$e_x$", fontdict=font)
 ax3.set_ylabel("$\dot{e}_x$", fontdict=font)
@@ -93,7 +93,7 @@ ax4 = plt.subplot2grid(
     (subplot_rows, subplot_cols), (2, 0), colspan=1, xticklabels=[], yticklabels=[]
 )
 ax4.plot(task_impedance_ts[:, 1], task_impedance_ts[:, 2], color=ts_color)
-ax4.plot(joint_impedance_ts[:, 1], joint_impedance_ts[:, 2], color=js_color)
+ax4.plot(joint_impedance_ts[:, 1], joint_impedance_ts[:, 2], color=js_color, linestyle="--")
 ax4.set_ylabel("$\dot{e}_x$", fontdict=font)
 ax4.set_xlabel("$e_x$", fontdict=font)
 
@@ -101,7 +101,7 @@ ax5 = plt.subplot2grid(
     (subplot_rows, subplot_cols), (2, 1), colspan=1, xticklabels=[], yticklabels=[]
 )
 ax5.plot(task_impedance_ts[:, 2], task_impedance_ts[:, 3], color=ts_color)
-ax5.plot(joint_impedance_ts[:, 2], joint_impedance_ts[:, 3], color=js_color)
+ax5.plot(joint_impedance_ts[:, 2], joint_impedance_ts[:, 3], color=js_color, linestyle="--")
 ax5.set_ylabel("$f_{int}$", fontdict=font)
 ax5.set_xlabel("$\dot{e}_x$", fontdict=font)
 
