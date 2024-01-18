@@ -2,9 +2,6 @@ import numpy as np
 import time as tm
 import math
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
-
-rcParams["axes.labelpad"] = 0
 
 from plots.transforms_function import *
 
@@ -150,8 +147,8 @@ purple1 = "#9e9ac8"
 purple2 = "#6a51a3"
 purple3 = "#4a1486"
 
-plt.figure()  # layout='constrained'
-plt.subplot(231, xticklabels=[], yticklabels=[])
+plt.figure(figsize=[11, 4], layout='constrained')
+plt.subplot(131, xticklabels=[], yticklabels=[])
 plt.plot(curves[:, 2, 0], curves[:, 2, 2], color=blue1, label=f"Kd={K[0]}")
 plt.plot(curves[:, 1, 0], curves[:, 1, 2], color=blue2, label=f"Kd={K[1]}")
 plt.plot(curves[:, 0, 0], curves[:, 0, 2], color=blue3, label=f"Kd={K[2]}")
@@ -159,7 +156,7 @@ plt.xlabel("$e_x$", fontdict=font)
 plt.ylabel("$f_{ext}$", fontdict=font)
 plt.legend(loc="upper left", fontsize="small", borderpad=0.1)
 
-plt.subplot(232, xticklabels=[], yticklabels=[])
+plt.subplot(132, xticklabels=[], yticklabels=[])
 plt.plot(curves[:, 4, 0], curves[:, 4, 2], color=green1, label=f"Bd={D[0]:.2f}")
 plt.plot(curves[:, 3, 0], curves[:, 3, 2], color=green2, label=f"Bd={D[1]:.1f}")
 plt.plot(curves[:, 0, 0], curves[:, 0, 2], color=green3, label=f"Bd={D[2]:.1f}")
@@ -167,45 +164,15 @@ plt.xlabel("$e_x$", fontdict=font)
 plt.ylabel("$f_{ext}$", fontdict=font)
 plt.legend(loc="upper left", fontsize="small", borderpad=0.1)
 
-plt.subplot(233, xticklabels=[], yticklabels=[])
+plt.subplot(133, xticklabels=[], yticklabels=[])
 plt.plot(curves[:, 0, 0], curves[:, 0, 2], color=purple1, label=f"Md={M[0]:.2f}")
 plt.plot(curves[:, 5, 0], curves[:, 5, 2], color=purple2, label=f"Md={M[1]:.1f}")
 plt.plot(curves[:, 6, 0], curves[:, 6, 2], color=purple3, label=f"Md={M[2]:.1f}")
 plt.xlabel("$e_x$", fontdict=font)
 plt.ylabel("$f_{ext}$", fontdict=font)
-plt.legend(loc="upper left", fontsize="small", borderpad=0.1)
+plt.legend(loc="upper center", fontsize="small", ncols=3, bbox_to_anchor=(0.5, 1.08))
 
-ax = plt.subplot(234, projection="3d", xticklabels=[], yticklabels=[], zticklabels=[])
-ax.set_proj_type("ortho")
-ax.plot(
-    curves[:, 2, 0], curves[:, 2, 1], curves[:, 2, 2], color=blue1, label=f"Kd = {K[0]}"
-)
-ax.plot(
-    curves[:, 1, 0], curves[:, 2, 1], curves[:, 1, 2], color=blue2, label=f"Kd = {K[1]}"
-)
-ax.plot(
-    curves[:, 0, 0], curves[:, 2, 1], curves[:, 0, 2], color=blue3, label=f"Kd = {K[2]}"
-)
-
-# ax.set_xlabel('$e_x$', fontdict=font)
-# ax.set_ylabel('$\dot{e}_x$', fontdict=font)
-# ax.set_zlabel('$f_{ext}$', fontdict=font)
-
-plt.subplot(235, xticklabels=[], yticklabels=[])
-plt.plot(curves[:, 2, 1], curves[:, 2, 2], color=blue1, label=f"Kd = {K[0]}")
-plt.plot(curves[:, 2, 1], curves[:, 1, 2], color=blue2, label=f"Kd = {K[1]}")
-plt.plot(curves[:, 2, 1], curves[:, 0, 2], color=blue3, label=f"Kd = {K[2]}")
-plt.xlabel("$\dot{e}_x$", fontdict=font)
-plt.ylabel("$f_{ext}$", fontdict=font)
-
-plt.subplot(236, xticklabels=[], yticklabels=[])
-plt.plot(curves[:, 2, 0], curves[:, 2, 1], color=blue1, label=f"Kd = {K[0]}")
-plt.plot(curves[:, 2, 0], curves[:, 1, 1], color=blue2, label=f"Kd = {K[1]}")
-plt.plot(curves[:, 2, 0], curves[:, 0, 1], color=blue3, label=f"Kd = {K[2]}")
-plt.xlabel("${e}_x$", fontdict=font)
-plt.ylabel("$\dot{e}_x$", fontdict=font)
-
-plt.subplots_adjust(
-    left=0.11, bottom=0.10, right=0.9, top=0.90, wspace=0.23, hspace=0.26
-)
+#plt.subplots_adjust(
+#    left=0.07, bottom=0.07, right=0.97, top=0.93, wspace=0.32, hspace=0.35
+#)
 plt.show(block=True)
