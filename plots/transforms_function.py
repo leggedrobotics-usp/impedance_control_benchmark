@@ -2,19 +2,21 @@ import numpy as np
 import math
 
 
-#   Compute the transforms according to the system (Kd,Bd,Md) and input (Fo, wu) params
+#   Compute the transforms according to the system (Kd,Dd,Md) and input frequency 'wu'
 def transforms(arg_dict):
     Kd = arg_dict.get("Kd")
-    Bd = arg_dict.get("Bd")
+    Dd = arg_dict.get("Dd")
     Md = arg_dict.get("Md")
     wu = arg_dict.get("wu")
 
+#TODO(qleonardolp): Update R definition using K,D,M
+
     wn = math.sqrt(Kd / Md)  # -> natural freq.
-    zeta = Bd / (2 * Md * wn)  # -> damping ratio
+    zeta = Dd / (2 * Md * wn)  # -> damping ratio
 
-    n_vec = np.array([Kd - Md * wu**2, Bd, -1])
+    n_vec = np.array([Kd - Md * wu**2, Dd, -Kd])
 
-    tht = math.atan(-n_vec[1] / n_vec[2])  # or: math.asin(Bd)
+    tht = math.atan(Dd / Kd)
     phi = math.asin(-n_vec[0] / np.linalg.norm(n_vec))
 
     Tx = np.array(
