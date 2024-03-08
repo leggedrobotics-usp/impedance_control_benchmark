@@ -3,7 +3,7 @@ import time as tm
 import math
 import matplotlib.pyplot as plt
 
-from plots.transforms_function import *
+from transforms_function import *
 
 # font dictionary to standardize
 font = {
