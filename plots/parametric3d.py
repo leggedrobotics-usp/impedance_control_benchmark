@@ -14,17 +14,14 @@ font = {
     "size": 13,
 }
 
-Fo = 50.0  #  [N]*
-wu = 3.00  # [Hz]
-
-freq_u = wu / (2 * math.pi)
-dt = 0.001
-steps = int(1 / (dt * freq_u))
+Amp = 50.0 # [N]*
+wu  = 3.00  # [Hz]
+dt  = 0.01
+steps = math.ceil(2 * math.pi / (dt * wu))
 
 parameters_set = [
-    {"Kd": 400, "Dd": 40, "Md": 0.01, "wu": 3},
-    {"Kd": 400, "Dd": 40, "Md": 4, "wu": 3},
-    {"Kd": 400, "Dd": 40, "Md": 44.444, "wu": 3},
+    {"Kd": 400, "Dd": 40, "Md": 22, "wu": 3},
+    {"Kd": 400, "Dd": 40, "Md": 0.0001, "wu": 3},
 ]
 
 curves = np.zeros(
@@ -39,24 +36,8 @@ for j, param in enumerate(parameters_set):
             Tx
             @ Ty
             @ Tz
-            @ np.array([Fo * math.cos(wu * k * dt), Fo * math.sin(wu * k * dt), 0]).T
+            @ np.array([Amp * math.cos(wu * k * dt), Amp * math.sin(wu * k * dt), 0]).T
         )
-
-CHECK = False
-
-# Test Plot (Plot x(t) vs F(t))
-if CHECK:
-    plt.plot(
-        curves[:, 0, 0],
-        curves[:, 0, 2],
-        curves[:, 1, 0],
-        curves[:, 1, 2],
-        curves[:, 2, 0],
-        curves[:, 2, 2],
-    )
-    plt.grid()
-    plt.show(block=False)
-
 
 # 3D plot with projections:
 ax = plt.figure().add_subplot(
@@ -64,15 +45,16 @@ ax = plt.figure().add_subplot(
 )
 ax.set_proj_type("ortho")
 
-curve_color = ["#9e9ac8", "#6a51a3", "#4a1486"]
+curve_color = ["green", "darkviolet"]
+projections_offset = 1.25
+x_off = np.max(curves[:, 0, 0]) * projections_offset
+y_off = np.max(curves[:, 0, 1]) * projections_offset
+z_off = np.min(curves[:, 0, 2]) * projections_offset
 
-x_off = np.max(curves[:, 0, 0]) * 1.05
-y_off = np.max(curves[:, 0, 1]) * 1.05
-z_off = np.min(curves[:, 0, 2]) * 1.05
 for c in range(len(parameters_set)):
-    x_off_new = np.max(curves[:, c, 0]) * 1.05
-    y_off_new = np.max(curves[:, c, 1]) * 1.05
-    z_off_new = np.min(curves[:, c, 2]) * 1.05
+    x_off_new = np.max(curves[:, c, 0]) * projections_offset
+    y_off_new = np.max(curves[:, c, 1]) * projections_offset
+    z_off_new = np.min(curves[:, c, 2]) * projections_offset
     if x_off_new > x_off:
         x_off = x_off_new
     if y_off_new > y_off:
@@ -85,17 +67,17 @@ for c, pset in enumerate(parameters_set):
     ax.plot(curves[:, c, 0], curves[:, c, 1], curves[:, c, 2],
             color=curve_color[c], label=f"Md={pvalue:.2f}")
 
-    ax.plot(curves[:, c, 0], curves[:, c, 1],
-            zs=z_off, zdir="z", color="royalblue",
-            linestyle="--", alpha=0.90,
-    )
+    #ax.plot(curves[:, c, 0], curves[:, c, 1],
+    #        zs=z_off, zdir="z", color=curve_color[c+2],
+    #        linestyle="--",
+    #)
     ax.plot(curves[:, c, 0], curves[:, c, 2],
-            zs=y_off, zdir="y", color="crimson",
-            linestyle="--", alpha=0.99,
+            zs=y_off, zdir="y", color=curve_color[c],
+            linestyle="--", alpha=0.7,
     )
     ax.plot(curves[:, c, 1], curves[:, c, 2],
-            zs=x_off, zdir="x", color="forestgreen",
-            linestyle="--", alpha=0.90,
+            zs=x_off, zdir="x", color=curve_color[c],
+            linestyle="--", alpha=0.7,
     )
 
 ax.xaxis.set_rotate_label(False)
