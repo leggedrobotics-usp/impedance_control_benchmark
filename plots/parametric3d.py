@@ -2,8 +2,14 @@ import numpy as np
 import time as tm
 import math
 import matplotlib.pyplot as plt
-
+import platform
 from transforms_function import *
+
+if platform.system() == 'Windows':
+    log_path = "impedance_control_benchmark/data"
+if platform.system() == 'Linux':
+    log_path = "data"
+task_impedance_ts = np.load(log_path + "/ts_data_taskimp.npy")[700:, :]
 
 # font dictionary to standardize
 font = {
@@ -14,14 +20,15 @@ font = {
     "size": 13,
 }
 
-Amp = 50.0 # [N]*
+Amp = 9.80665 * 5 / 1000 # [m]
 wu  = 3.00  # [Hz]
 dt  = 0.01
 steps = math.ceil(2 * math.pi / (dt * wu))
 
+simulation_params = {"Kd": 1000, "Dd": 8, "Md": 0.016, "wu": wu}
 parameters_set = [
-    {"Kd": 400, "Dd": 40, "Md": 22, "wu": 3},
-    {"Kd": 400, "Dd": 40, "Md": 0.0001, "wu": 3},
+    {"Kd": 1000, "Dd": 8, "Md": 0.000, "wu": wu},
+    {"Kd": 1000, "Dd": 8, "Md": 44.00, "wu": wu},
 ]
 
 curves = np.zeros(
@@ -65,7 +72,7 @@ for c in range(len(parameters_set)):
 for c, pset in enumerate(parameters_set):
     pvalue = pset["Md"]
     ax.plot(curves[:, c, 0], curves[:, c, 1], curves[:, c, 2],
-            color=curve_color[c], label=f"Md={pvalue:.2f}")
+            color=curve_color[c], label=f"Md={pvalue:.3f}")
 
     #ax.plot(curves[:, c, 0], curves[:, c, 1],
     #        zs=z_off, zdir="z", color=curve_color[c+2],
@@ -80,6 +87,12 @@ for c, pset in enumerate(parameters_set):
             linestyle="--", alpha=0.7,
     )
 
+# Log from Pinocchio simulation
+ax.plot(task_impedance_ts[:, 1],
+        task_impedance_ts[:, 2],
+        task_impedance_ts[:, 3],
+        color="k", alpha=0.0)
+
 ax.xaxis.set_rotate_label(False)
 ax.yaxis.set_rotate_label(False)
 ax.zaxis.set_rotate_label(False)
@@ -90,6 +103,6 @@ ax.set_ylabel("$\dot{e}_x$", fontdict=font)
 ax.set_zlabel("$f_{ext}$", fontdict=font)
 ax.set_xlabel("$e_x$", fontdict=font)
 plt.legend(loc="upper center", fontsize="small",
-           ncols=3, bbox_to_anchor=(0.5, 1.08)
+           ncols=3, bbox_to_anchor=(0.5, 1.00)
 )
 plt.show(block=True)
