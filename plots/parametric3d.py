@@ -1,15 +1,9 @@
 import numpy as np
-import time as tm
 import math
 import matplotlib.pyplot as plt
-import platform
 from transforms_function import *
 
-if platform.system() == 'Windows':
-    log_path = "impedance_control_benchmark/data"
-if platform.system() == 'Linux':
-    log_path = "data"
-task_impedance_ts = np.load(log_path + "/ts_data_taskimp.npy")[700:, :]
+task_impedance_ts = np.load("data/ts_data_taskimp.npy")[700:, :]
 
 # font dictionary to standardize
 font = {

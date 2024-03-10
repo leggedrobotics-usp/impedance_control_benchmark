@@ -1,20 +1,14 @@
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
-import platform
 import numpy
 import math
 
 rad2deg = 180 / math.pi
 t_begin = 700  # samples [dt = 0.001 s]
-if platform.system() == 'Windows':
-    log_path = "impedance_control_benchmark/data"
-if platform.system() == 'Linux':
-    log_path = "data"
-
-joint_impedance_js = numpy.load(log_path + "/js_data_jointimp.npy")[t_begin:, :]
-joint_impedance_ts = numpy.load(log_path + "/ts_data_jointimp.npy")[t_begin:, :]
-task_impedance_js  = numpy.load(log_path + "/js_data_taskimp.npy")[t_begin:, :]
-task_impedance_ts  = numpy.load(log_path + "/ts_data_taskimp.npy")[t_begin:, :]
+joint_impedance_js = numpy.load("data/js_data_jointimp.npy")[t_begin:, :]
+joint_impedance_ts = numpy.load("data/ts_data_jointimp.npy")[t_begin:, :]
+task_impedance_js  = numpy.load("data/js_data_taskimp.npy")[t_begin:, :]
+task_impedance_ts  = numpy.load("data/ts_data_taskimp.npy")[t_begin:, :]
 
 ts_color = colormaps['tab20c'](0)
 js_color = colormaps['tab20c'](4)
