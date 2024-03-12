@@ -21,13 +21,14 @@ steps = math.ceil(2 * math.pi / (dt * wu))
 
 simulation_params = {"Kd": 1000, "Dd": 8, "Md": 0.016, "wu": wu}
 parameters_set = [
-    {"Kd": 1000, "Dd": 8, "Md": 0.000, "wu": wu},
-    {"Kd": 1000, "Dd": 8, "Md": 44.00, "wu": wu},
+    {"Kd": 1000, "Dd": 100, "Md": 0, "wu": wu},
+    {"Kd": 1000, "Dd": 0.0, "Md": 0, "wu": wu},
 ]
 
+# 1st dim: time, 2nd dim: parameters_set, 3rd dim: {x,y,z}
 curves = np.zeros(
     (steps, len(parameters_set), 3)
-)  # 1st dim: time, 2nd dim: parameters_set, 3rd dim: {x,y,z}
+)
 
 # Generate Curves:
 for j, param in enumerate(parameters_set):
@@ -47,7 +48,7 @@ ax = plt.figure().add_subplot(
 ax.set_proj_type("ortho")
 
 curve_color = ["green", "darkviolet"]
-projections_offset = 1.25
+projections_offset = 1.45
 x_off = np.max(curves[:, 0, 0]) * projections_offset
 y_off = np.max(curves[:, 0, 1]) * projections_offset
 z_off = np.min(curves[:, 0, 2]) * projections_offset
@@ -64,14 +65,10 @@ for c in range(len(parameters_set)):
         z_off = z_off_new
 
 for c, pset in enumerate(parameters_set):
-    pvalue = pset["Md"]
+    pvalue = pset["Dd"]
     ax.plot(curves[:, c, 0], curves[:, c, 1], curves[:, c, 2],
-            color=curve_color[c], label=f"Md={pvalue:.3f}")
+            color=curve_color[c], label=f"Dd={pvalue:.1f}")
 
-    #ax.plot(curves[:, c, 0], curves[:, c, 1],
-    #        zs=z_off, zdir="z", color=curve_color[c+2],
-    #        linestyle="--",
-    #)
     ax.plot(curves[:, c, 0], curves[:, c, 2],
             zs=y_off, zdir="y", color=curve_color[c],
             linestyle="--", alpha=0.7,
@@ -85,7 +82,8 @@ for c, pset in enumerate(parameters_set):
 ax.plot(task_impedance_ts[:, 1],
         task_impedance_ts[:, 2],
         task_impedance_ts[:, 3],
-        color="k", alpha=0.0)
+        color="k", linestyle=":",
+        alpha=0.0)
 
 ax.xaxis.set_rotate_label(False)
 ax.yaxis.set_rotate_label(False)

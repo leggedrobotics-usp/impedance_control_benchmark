@@ -28,19 +28,14 @@ def transforms(arg_dict):
         ]
     )
     
-    # P11 = 0
-    
     sigma_1 = math.sqrt(D**2 + 1)
     sigma_2 = K - M*wu**2
-    sigma_3 = D**2 + abs(sigma_2)**2 + 1
+
+    R11 = math.sqrt(1 + (sigma_2/sigma_1)**2)
+    R12 = 0
+    R21 = D * sigma_2 / sigma_1
+    R22 = wu * sigma_1
     
-    P12 = (
-        math.sqrt(1 - sigma_2**2/sigma_3) +
-        sigma_2**2/(sigma_1 * math.sqrt(sigma_3))
-    )
-    P21 = wu * sigma_1
-    P22 = D * sigma_2 / sigma_1
+    Tz = np.array([[R11, R12, 0], [R21, R22, 0], [0, 0, 1]])
 
-    P = np.array([[0, P12, 0], [P21, P22, 0], [0, 0, 1]])
-
-    return Tx, Ty, P
+    return Tx, Ty, Tz
