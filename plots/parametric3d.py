@@ -35,10 +35,10 @@ for j, param in enumerate(parameters_set):
     for k in range(steps):
         Tx, Ty, Tz = transforms(param)
         curves[k, j, :] = (
-            Tx
+            Amp * Tx
             @ Ty
             @ Tz
-            @ np.array([Amp * math.cos(wu * k * dt), Amp * math.sin(wu * k * dt), 0]).T
+            @ np.array([math.cos(wu * k * dt), math.sin(wu * k * dt), 0]).T
         )
 
 # 3D plot with projections:
