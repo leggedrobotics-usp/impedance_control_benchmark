@@ -21,8 +21,8 @@ steps = math.ceil(2 * math.pi / (dt * wu))
 
 simulation_params = {"Kd": 1000, "Dd": 8, "Md": 0.016, "wu": wu}
 parameters_set = [
-    {"Kd": 1000, "Dd": 100, "Md": 0, "wu": wu},
     {"Kd": 1000, "Dd": 0.0, "Md": 0, "wu": wu},
+    {"Kd": 1000, "Dd": 300, "Md": 0, "wu": wu},
 ]
 
 # 1st dim: time, 2nd dim: parameters_set, 3rd dim: {x,y,z}
@@ -49,6 +49,9 @@ ax.set_proj_type("ortho")
 
 curve_color = ["green", "darkviolet"]
 projections_offset = 1.45
+projections_alpha  = 0.0
+plot_type = 'surface'
+
 x_off = np.max(curves[:, 0, 0]) * projections_offset
 y_off = np.max(curves[:, 0, 1]) * projections_offset
 z_off = np.min(curves[:, 0, 2]) * projections_offset
@@ -66,17 +69,39 @@ for c in range(len(parameters_set)):
 
 for c, pset in enumerate(parameters_set):
     pvalue = pset["Dd"]
+
     ax.plot(curves[:, c, 0], curves[:, c, 1], curves[:, c, 2],
             color=curve_color[c], label=f"Dd={pvalue:.1f}")
 
-    ax.plot(curves[:, c, 0], curves[:, c, 2],
-            zs=y_off, zdir="y", color=curve_color[c],
-            linestyle="--", alpha=0.7,
-    )
-    ax.plot(curves[:, c, 1], curves[:, c, 2],
-            zs=x_off, zdir="x", color=curve_color[c],
-            linestyle="--", alpha=0.7,
-    )
+    if plot_type == "contour":
+      ax.plot(curves[:, c, 0], curves[:, c, 2],
+              zs=y_off, zdir="y", color=curve_color[c],
+              linestyle="--", alpha=projections_alpha,
+      )
+      ax.plot(curves[:, c, 1], curves[:, c, 2],
+              zs=x_off, zdir="x", color=curve_color[c],
+              linestyle="--", alpha=projections_alpha,
+      )
+    if plot_type == "surface":
+        ax.plot_trisurf(curves[:, c, 0], curves[:, c, 1], curves[:, c, 2],
+            color=curve_color[c], linewidth=0.3, antialiased=True, alpha=0.5
+        )
+
+if plot_type == "surface":
+  #TODO: use Tx*Ty*Tz*{1,0,0}...
+  K = parameters_set[1]["Kd"]
+  D = parameters_set[1]["Dd"]
+  x_points = np.linspace(-x_off, x_off)
+  y_points = np.linspace(-y_off, y_off)
+  ax.plot(0 * y_points, y_points, 0 * y_points,
+          color="k", linestyle="--"
+  )
+  ax.plot(np.linspace(-x_off, x_off), np.zeros(50),
+          K * np.linspace(-x_off, x_off), color="k", linestyle="--"
+  )
+  ax.plot(x_points, K/D * np.linspace(-x_off, x_off),
+          K * x_points, color="k", linestyle="--"
+  )
 
 # Log from Pinocchio simulation
 ax.plot(task_impedance_ts[:, 1],
