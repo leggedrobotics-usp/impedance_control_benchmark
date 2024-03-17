@@ -21,6 +21,7 @@ steps = math.ceil(2 * math.pi / (dt * wu))
 
 simulation_params = {"Kd": 1000, "Dd": 8, "Md": 0.016, "wu": wu}
 parameters_set = [
+    {"Kd": 0.00, "Dd": 0.0, "Md": 0, "wu": wu},
     {"Kd": 1000, "Dd": 0.0, "Md": 0, "wu": wu},
     {"Kd": 1000, "Dd": 300, "Md": 0, "wu": wu},
 ]
@@ -29,16 +30,13 @@ parameters_set = [
 curves = np.zeros(
     (steps, len(parameters_set), 3)
 )
-
 # Generate Curves:
 for j, param in enumerate(parameters_set):
     for k in range(steps):
         Tx, Ty, Tz = transforms(param)
-        curves[k, j, :] = (
-            Amp * Tx
-            @ Ty
-            @ Tz
-            @ np.array([math.cos(wu * k * dt), math.sin(wu * k * dt), 0]).T
+        T = Tx @ Ty @ Tz
+        curves[k, j, :] = (Amp * T @
+            np.array([math.cos(wu * k * dt), math.sin(wu * k * dt), 0]).T
         )
 
 # 3D plot with projections:
@@ -47,7 +45,7 @@ ax = plt.figure().add_subplot(
 )
 ax.set_proj_type("ortho")
 
-curve_color = ["green", "darkviolet"]
+curve_color = ["silver" ,"green", "darkviolet"]
 projections_offset = 1.45
 projections_alpha  = 0.0
 plot_type = 'surface'
@@ -68,40 +66,38 @@ for c in range(len(parameters_set)):
         z_off = z_off_new
 
 for c, pset in enumerate(parameters_set):
-    pvalue = pset["Dd"]
-
-    ax.plot(curves[:, c, 0], curves[:, c, 1], curves[:, c, 2],
-            color=curve_color[c], label=f"Dd={pvalue:.1f}")
+    k_val, d_val = pset["Kd"], pset["Dd"]
+    label_string = (
+        "$K_d$ = " + f"{k_val}, " +
+        "$D_d$ = " + f"{d_val}"
+    )
+    ax.plot(curves[:, c, 0], curves[:, c, 1],
+            curves[:, c, 2], color=curve_color[c],
+            label=label_string)
 
     if plot_type == "contour":
       ax.plot(curves[:, c, 0], curves[:, c, 2],
-              zs=y_off, zdir="y", color=curve_color[c],
-              linestyle="--", alpha=projections_alpha,
+        zs=y_off, zdir="y", color=curve_color[c],
+        linestyle="--", alpha=projections_alpha,
       )
       ax.plot(curves[:, c, 1], curves[:, c, 2],
-              zs=x_off, zdir="x", color=curve_color[c],
-              linestyle="--", alpha=projections_alpha,
+        zs=x_off, zdir="x", color=curve_color[c],
+        linestyle="--", alpha=projections_alpha,
       )
     if plot_type == "surface":
-        ax.plot_trisurf(curves[:, c, 0], curves[:, c, 1], curves[:, c, 2],
-            color=curve_color[c], linewidth=0.3, antialiased=True, alpha=0.5
+        ax.plot_trisurf(curves[:, c, 0], curves[:, c, 1],
+            curves[:, c, 2], color=curve_color[c],
+            linewidth=0.3, antialiased=True, alpha=0.5
         )
 
-if plot_type == "surface":
-  #TODO: use Tx*Ty*Tz*{1,0,0}...
-  K = parameters_set[1]["Kd"]
-  D = parameters_set[1]["Dd"]
-  x_points = np.linspace(-x_off, x_off)
-  y_points = np.linspace(-y_off, y_off)
-  ax.plot(0 * y_points, y_points, 0 * y_points,
-          color="k", linestyle="--"
-  )
-  ax.plot(np.linspace(-x_off, x_off), np.zeros(50),
-          K * np.linspace(-x_off, x_off), color="k", linestyle="--"
-  )
-  ax.plot(x_points, K/D * np.linspace(-x_off, x_off),
-          K * x_points, color="k", linestyle="--"
-  )
+# Dashed lines to aid on the angles visual representation
+ax.plot([0, Amp], [0, 0], [0, 0], linestyle="--", color="k")
+ax.plot([0, Amp], [0, 0], [0, 1000 * Amp], linestyle="--", color="k")
+ax.plot([0, 0], [0, -wu * Amp], [0, 0], linestyle="--", color="k")
+Tx, Ty, Tz = transforms(parameters_set[2])
+yaxis_trans = Tx @ Ty @ Tz @ np.array([0, -Amp, 0])
+ax.plot([0, yaxis_trans[0]], [0, yaxis_trans[1]],
+        [0, yaxis_trans[2]], linestyle="--", color="k")
 
 # Log from Pinocchio simulation
 ax.plot(task_impedance_ts[:, 1],
@@ -120,6 +116,6 @@ ax.set_ylabel("$\dot{e}_x$", fontdict=font)
 ax.set_zlabel("$f_{ext}$", fontdict=font)
 ax.set_xlabel("$e_x$", fontdict=font)
 plt.legend(loc="upper center", fontsize="small",
-           ncols=3, bbox_to_anchor=(0.5, 1.00)
+           ncols=1, bbox_to_anchor=(0.07, 1.00)
 )
 plt.show(block=True)

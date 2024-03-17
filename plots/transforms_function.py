@@ -10,14 +10,14 @@ def transforms(arg_dict):
 
     binormal_vector = np.array([K - M * wu**2, D, -1])
 
-    tht = math.atan(D)
+    rho = math.atan(D)
     phi = math.asin(-binormal_vector[0] / np.linalg.norm(binormal_vector))
 
     Tx = np.array(
         [
             [1, 0, 0],
-            [0, math.cos(tht), -math.sin(tht)],
-            [0, math.sin(tht), math.cos(tht)],
+            [0, math.cos(rho), -math.sin(rho)],
+            [0, math.sin(rho), math.cos(rho)],
         ]
     )
     Ty = np.array(
