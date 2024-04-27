@@ -36,7 +36,7 @@ for j, param in enumerate(parameters_set):
         Tx, Ty, Tz = transforms(param)
         T = Tx @ Ty @ Tz
         curves[k, j, :] = (Amp * T @
-            np.array([math.cos(wu * k * dt), math.sin(wu * k * dt), 0]).T
+            np.array([math.cos(wu * k * dt), math.sin(wu * k * dt)]).T
         )
 
 # 3D plot with projections:
@@ -95,7 +95,7 @@ ax.plot([0, Amp], [0, 0], [0, 0], linestyle="--", color="k")
 ax.plot([0, Amp], [0, 0], [0, 1000 * Amp], linestyle="--", color="k")
 ax.plot([0, 0], [0, -wu * Amp], [0, 0], linestyle="--", color="k")
 Tx, Ty, Tz = transforms(parameters_set[2])
-yaxis_trans = Tx @ Ty @ Tz @ np.array([0, -Amp, 0])
+yaxis_trans = Tx @ Ty @ Tz @ np.array([0, -Amp])
 ax.plot([0, yaxis_trans[0]], [0, yaxis_trans[1]],
         [0, yaxis_trans[2]], linestyle="--", color="k")
 
