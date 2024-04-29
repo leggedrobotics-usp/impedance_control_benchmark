@@ -5,24 +5,24 @@ import control
 from math import pi, sin, cos
 
 # Lumped parameters:
-wi = 2*pi*0.8    # input *angular frequency
-Ai = 0.500       # input amplitude
-Mr = 1.500       # actual mass
-Kd = 1000.0      # impedance stiffness
+wi = 2*pi*1.2    # input *angular frequency
+Ai = 0.679       # input amplitude
+Mr = 2.718       # actual mass
+Kd = 400.0       # impedance stiffness
 Dd = 2*sqrt(Kd)  # impedance damping
-Md = 0.00  # impedance inertia
+Md = 0 # impedance inertia
 
 #print(math.sqrt(Kd/Md))
 parameters_dict = {"Kd": Kd, "Dd": Dd, "Md": Md, "wi": wi, "Mr": Mr}
 
 input_period = 2 * pi / wi
-time = np.linspace(0, 3*input_period, 600)
+time = np.linspace(0, 2.0*input_period, 600)
 x_ref_time = Ai * np.sin(wi * time)
 
 ellipse = []
 Tx, Ty, Tz = transforms(parameters_dict)
 for k in np.linspace(0, 2*pi, 180):
-  ellipse.append(Ai/wi * Tx @ Ty @ Tz @ np.array([sin(k), cos(k)]).T) # why /wi ??
+  ellipse.append(Ai * Tx @ Ty @ Tz @ np.array([cos(k), sin(k)]).T)
 ellipse = np.array(ellipse)
 
 s = control.tf('s')      # s-domain variable
@@ -52,7 +52,7 @@ ax1.set_proj_type("ortho")
 ax1.plot(error_response.x[0], error_derivative, force_int_time)
 ax1.plot(ellipse[:, 0], ellipse[:, 1], ellipse[:, 2], color="r", linestyle="--")
 ax1.set_xlabel("$e$")
-ax1.set_ylabel("$\dot{e}$")
+ax1.set_ylabel("$de$")
 ax1.set_zlabel("$f_{int}$")
 
 ax2 = fig.add_subplot(1, 2, 2)

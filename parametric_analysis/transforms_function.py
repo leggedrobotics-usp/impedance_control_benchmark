@@ -42,28 +42,16 @@ def transforms(arg_dict):
             [-sin(phi), 0, cos(phi)],
         ]
     )
-    
-    sigma_08 = 2 * K * M * wi**2
-    sigma_07 = (M*wi**2)**2
-    sigma_06 = 2 * M * Mr * wi**4
-    sigma_05 = (Mr*wi**2)**2
-    sigma_04 = (D * wi)**2
-    sigma_03 = K**2 + D**2 + 1 + sigma_07 - sigma_08
-    sigma_02 = K * (K - 2 * (M + Mr) * wi**2) + sigma_04 + sigma_05 + sigma_06 + sigma_07
-    sigma_01 = D**2 + 1
-    
-    R11 = ((M + Mr) * wi**2 - K) * sqrt(sigma_03) / (
-        sqrt(sigma_01) * (
-                K**2 - 2 * K * Mr * wi**2 +
-                sigma_04 + sigma_05 + sigma_06 + sigma_07 - sigma_08
-            )
-    )
-    R12 = D * wi * sigma_03 / (
-        sqrt(sigma_01) * sqrt((K - M * wi**2)**2 + D**2 + 1) * sigma_02
-    )
-    R21 = D / sqrt(sigma_01) * (wi**2 * (Mr*((Mr + M)*wi**2 - K) - 1) / sigma_02 - 1)
-    R22 = wi * ((M + Mr*sigma_01) * wi**2 - K) / (sqrt(sigma_01) * sigma_02)
-    
-    Tz = np.array([[R11, R12], [R21, R22], [0, 0]]) * Mr * wi**2
 
+    sigma_03 = K**2 + D**2 + 1 - 2 * K * M * wi**2 + (M*wi**2)**2
+    sigma_02 = K * (K - 2 * (M + Mr) * wi**2) + (
+        (D * wi)**2 + (M*wi**2)**2 + (Mr*wi**2)**2 + 2 * M * Mr * wi**4
+    )
+    sigma_01 = D**2 + 1
+
+    R11 = D*wi*sigma_03 / (sqrt(sigma_01) * sqrt((K - M * wi**2)**2 + D**2 + 1) * sigma_02)
+    R12 = ((M + Mr) * wi**2 - K) * sqrt(sigma_03) / (sqrt(sigma_01) * sigma_02)
+    R21 = wi * ((M + Mr*sigma_01) * wi**2 - K) / (sqrt(sigma_01) * sigma_02)
+    R22 = D/sqrt(sigma_01) * (wi**2 * (Mr*((Mr + M)*wi**2 - K) - 1) / sigma_02 - 1)
+    Tz = np.array([[R11, R12], [R21, R22], [0, 0]]) * Mr * wi**2
     return Tx, Ty, Tz
