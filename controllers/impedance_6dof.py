@@ -17,19 +17,21 @@ import time as tm
 import math
 from math import pi as pie
 import matplotlib.pyplot as plt
-
-
 from pinocchio.visualize import MeshcatVisualizer
-from example_robot_data import load
+import example_robot_data
 
-robot_name = "ur5"
-robot = load(robot_name)
+
+controller = 4  # Choose the impedance controller
+plotting = True  # dismiss plot if false
+savefile = False  # dismiss log save if false
+open_viewer = False  # false if the viewer tab is already open (http://127.0.0.1:7000/static/)
+
+robot = example_robot_data.load("ur5")
 viz = MeshcatVisualizer()
 
 robot.setVisualizer(viz)
-robot.initViewer(open=True)
+robot.initViewer(open=open_viewer)
 robot.loadViewerModel()
-
 NQ, NV = robot.model.nq, robot.model.nv
 end_effector = robot.model.getFrameId("ee_link")
 
@@ -38,16 +40,32 @@ dq = np.zeros(robot.model.nv)
 ddq = np.zeros(robot.model.nv)
 tau = np.zeros(robot.model.nq)
 
+sim_dt = 0.010  # [s] simulation time step
+
 # Cartesian Impedance Control
-Kd = np.diag([1000, 7000, 7000, 200, 200, 200])  # Stiffness
-wn = np.diag([250, 50, 50, 30, 30, 30])  # natural freq.
-Md = Kd @ np.linalg.inv(wn @ wn.T)  # M = K/w²
-Md_inv = np.linalg.inv(Md)
 # Rotational Impedance (Roll, Pitch, Yaw):
 Ree_des = pin.rpy.rpyToMatrix(0, 0, 0)
-# Damping design, D = 2 * sqrt(K*M) * zeta:
-zeta = 1.0
-Dd = 2 * np.sqrt(Kd @ Md) * zeta  # Damping
+
+if controller == 2:
+    sim_dt = 0.001  # [s]
+    Kd = np.diag([1000, 7000, 7000, 200, 200, 200])  # Stiffness
+    wn = np.diag([250, 50, 50, 30, 30, 30])  # natural freq.
+    Md = Kd @ np.linalg.inv(wn @ wn.T)  # M = K/w²
+    Md_inv = np.linalg.inv(Md)
+    # Damping design, D = 2 * sqrt(K*M) * zeta:
+    zeta = 1.0
+    Dd = 2 * np.sqrt(Kd @ Md) * zeta  # Damping
+if controller == 3 or controller == 4: # 1st order impedance
+    Kd = np.diag([2500, 2500, 2500, 150, 150, 188])  # Stiffnes
+    Dd = np.diag([125, 100, 100, 0.6, 0.6, 0.8])  # Damping
+if controller == 5:
+    q_des = q
+    dq_des = np.zeros(robot.model.nv)
+    ddq_des = np.zeros(robot.model.nv)
+    
+# Simulation time parameters
+sim_duration = 4.00  # [s]
+sim_steps = int(sim_duration / sim_dt)
 
 # Initiate the x_des according to the q0
 pin.forwardKinematics(robot.model, robot.data, q)
@@ -61,13 +79,6 @@ dVm = np.zeros(NV)
 k_sap = 1.00
 m_dyn0 = 8.58e-2  # experimental threshold
 
-# Simulation time parameters
-sim_duration = 4.00  # [s]
-sim_dt = 0.001  # [s]
-sim_steps = int(sim_duration / sim_dt)
-
-# Choose the impedance controller
-controller = 2
 singularity_avd = False
 dynamic_ref = False
 
@@ -85,8 +96,6 @@ delta_t = []
 JTpinv = np.zeros((3, NQ))  #
 
 # Logging
-plotting = True
-savefile = False
 log_fee = []  # force_ext logging data
 log_xee = []  # ee pos error logging data
 log_vee = []  # ee vel error logging data
@@ -96,6 +105,17 @@ log_time = []  # time logging data
 log_torque = []
 log_joints = []
 
+tau_id_full_j1 = []
+tau_id_full_j3 = []
+
+tau_id_part_j1 = []
+tau_id_part_j3 = []
+
+tau_grav_j1 = []
+tau_grav_j3 = []
+
+viz.display(q)
+input("Wait the visualizer loading on the browser window or press F5 if already open.\nThen, press any key to start.")
 try:
     print(f"Simulation started, Controller {controller}. Press CTRL+C to stop.")
     tic = tm.time()
@@ -180,12 +200,14 @@ try:
             impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             Ji = np.linalg.inv(J)
             IR = M @ Md_inv  # Inertial Ratio
-            tau = (
-                M @ J @ a_desired
-                + (h - g - M @ Ji @ dJ) @ Ji @ v_desired
-                + (J.T @ IR) @ (impedance_force + force_ext)
-                - J.T @ force_ext
-            )
+            interaction_port = (J.T @ IR) @ (impedance_force + force_ext) - J.T @ force_ext
+            inverse_dyn_partial = M @ J @ a_desired + (h - g) @ Ji @ v_desired
+            inverse_dyn = M @ J @ a_desired + (h - g - M @ Ji @ dJ) @ Ji @ v_desired
+            tau_id_full_j1.append(inverse_dyn[1])
+            tau_id_full_j3.append(inverse_dyn[3])
+            tau_id_part_j1.append(inverse_dyn_partial[1])
+            tau_id_part_j3.append(inverse_dyn_partial[3])
+            tau = inverse_dyn + interaction_port
 
         if controller == 3:
             # [Ott,2008]: Classical Impedance Controler (No Inertia) Eq. 3.18
@@ -238,6 +260,9 @@ try:
 
         log_joints.append(q)
         log_torque.append(tau)
+        
+        tau_grav_j1.append(g[1])
+        tau_grav_j3.append(g[3])
 
     ellapsed_time = tm.time() - tic
     print(f"\nSimulation ended. ({ellapsed_time:.2f} s)\n")
