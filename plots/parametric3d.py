@@ -1,7 +1,20 @@
+# Impedance Control Benchmark
+# Copyright (C) 2024, leggedrobotics-usp
+# Leonardo F. dos Santos, Cícero L. A. Zanette, and Elisa G. Vergamini
+#
+# This program is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License 3.0,
+# or later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from transforms_function import *
+from parametric_analysis.transforms_function import *
 
 task_impedance_ts = np.load("data/ts_data_taskimp.npy")[700:, :]
 

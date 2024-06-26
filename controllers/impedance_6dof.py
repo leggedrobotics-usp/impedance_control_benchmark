@@ -1,7 +1,15 @@
-#   Classical Impedance Controller - 6 DoF: Translational + Rotational
-#   Leonardo F. dos Santos, 2023 | qleonardolp
-#   REMEMBER: run on interactive mode (MeshcatVisualizer):
-#   python3 -i impedance_6dof.py
+# Impedance Control Benchmark
+# Copyright (C) 2024, leggedrobotics-usp
+# Leonardo F. dos Santos, Cícero L. A. Zanette, and Elisa G. Vergamini
+#
+# This program is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License 3.0,
+# or later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
 import pinocchio as pin
 import numpy as np
@@ -34,12 +42,11 @@ tau = np.zeros(robot.model.nq)
 Kd = np.diag([1000, 7000, 7000, 200, 200, 200])  # Stiffness
 wn = np.diag([250, 50, 50, 30, 30, 30])  # natural freq.
 Md = Kd @ np.linalg.inv(wn @ wn.T)  # M = K/w²
-# Md = np.diag([9.2, 9.2, 9.2, .18, .18, .18])    # Inertia
 Md_inv = np.linalg.inv(Md)
 # Rotational Impedance (Roll, Pitch, Yaw):
 Ree_des = pin.rpy.rpyToMatrix(0, 0, 0)
 # Damping design, D = 2 * sqrt(K*M) * zeta:
-zeta = 1.0  # 0.5 | 0.7 | 1.0
+zeta = 1.0
 Dd = 2 * np.sqrt(Kd @ Md) * zeta  # Damping
 
 # Initiate the x_des according to the q0
@@ -52,19 +59,13 @@ a_desired = np.zeros(6)
 Vm, Vm_last = 0, 0
 dVm = np.zeros(NV)
 k_sap = 1.00
-m_dyn0 = 8.58e-2  # experimentally computed threshold
+m_dyn0 = 8.58e-2  # experimental threshold
 
-# Nullspace joint compliance
-Kns = np.eye(NQ) * 50
-Dns = np.sqrt(Kns) * 2
-q_des = q
-dq_des = np.zeros(robot.model.nv)
-ddq_des = np.zeros(robot.model.nv)
-
-# Simulation parameters
+# Simulation time parameters
 sim_duration = 4.00  # [s]
 sim_dt = 0.001  # [s]
 sim_steps = int(sim_duration / sim_dt)
+
 # Choose the impedance controller
 controller = 2
 singularity_avd = False
@@ -78,8 +79,7 @@ fe_angf = 3.00  # [Hz]
 tau_ext = np.zeros(NQ)
 force_ext = np.array(
     [-fe_amp, 0, 0, 0, 0, 0]
-)  # somehow the plots are more beautiful with -fe_amp here (??)
-# static_x_expt = x_desired - np.linalg.inv(Kd).dot(force_ext)
+)
 
 delta_t = []
 JTpinv = np.zeros((3, NQ))  #
@@ -123,7 +123,7 @@ try:
         # Get ee kinematic data:
         pin.updateFramePlacement(robot.model, robot.data, end_effector)
         x = robot.data.oMf[end_effector].translation  # 3x1
-        v = J @ dq  # using J definition (numpy product @)       # 6x1
+        v = J @ dq
         ddx = dJ @ dq + J @ ddq
 
         Ree = robot.data.oMf[end_effector].rotation
@@ -186,7 +186,6 @@ try:
                 + (J.T @ IR) @ (impedance_force + force_ext)
                 - J.T @ force_ext
             )
-            # g(q) is on Forward Dynamics line
 
         if controller == 3:
             # [Ott,2008]: Classical Impedance Controler (No Inertia) Eq. 3.18
@@ -201,7 +200,6 @@ try:
                 + (h - g - M @ Ji @ dJ) @ Ji @ v_desired
                 + J.T @ impedance_force
             )
-            # g(q) is on Forward Dynamics line
 
         if controller == 4:
             # [Ott,2008]: Classical Impedance Controler with a_d = v_d = 0
@@ -210,7 +208,6 @@ try:
             err = np.concatenate([pos_err, rpy_err])
             impedance_force = Kd.dot(err) + Dd.dot(-v)
             tau = J.T @ impedance_force
-            # g(q) is on Forward Dynamics line
 
         if controller == 5:
             # Joint Space impedance (Tutorial):
@@ -222,7 +219,6 @@ try:
                 Kq.dot(q_des - q) + Dq.dot(dq_des - dq) + Mq.dot(ddq_des - ddq)
             )
             tau = tau_impedance
-            # g(q) is on Forward Dynamics line
 
         ## Simulate Dynamics ##
         # Forward Dynamics (Articulated-Body Algorithm):
@@ -261,13 +257,9 @@ if plotting:
     plt.show(block=False)
 
 if savefile:
-    # TODO(qleonardolp): data and hour on the file name
     np.save("data/ts_data", np.array([log_time, log_xee, log_vee, log_fee, log_aee]).T)
-
     time = np.array([log_time]).T
     joints = np.array(log_joints)
     torque = np.array(log_torque)
     js_log = np.hstack((time, joints, torque))
     np.save("data/js_data", js_log)
-    # use np.load to import data on the plotting script
-    print("Logs saved!")
