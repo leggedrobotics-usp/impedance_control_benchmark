@@ -198,14 +198,14 @@ try:
 
         if controller == 1:
             # [T. Boaventura, 2012]: Joint Space PD
-            Kp = np.diag([2000, 400, 400, 400, 5000, 10000])
-            Kd = np.diag([10, 40, 40, 40, 10, 10])
+            Kp = 100 * np.eye(NQ)
+            Kd = 20 * np.eye(NQ)
             joint_impedance = Kp.dot(q_des - q) + Kd.dot(dq_des - dq)
-            tau_id_part_j1.append(joint_impedance[1])
-            tau_id_part_j3.append(joint_impedance[3])
+            tau_id_part_j1.append(joint_impedance[0])
+            tau_id_part_j3.append(joint_impedance[2])
             joint_impedance = M @ joint_impedance
-            tau_id_full_j1.append(joint_impedance[1])
-            tau_id_full_j3.append(joint_impedance[3])
+            tau_id_full_j1.append(joint_impedance[0])
+            tau_id_full_j3.append(joint_impedance[2])
             tau = M @ ddq_des + h + joint_impedance
 
         if controller == 2:
@@ -262,8 +262,8 @@ try:
         log_joints.append(q)
         log_torque.append(tau)
 
-        tau_nle_j1.append(g[1] + h[1])
-        tau_nle_j3.append(g[3] + h[3])
+        tau_nle_j1.append(g[0] + h[0])
+        tau_nle_j3.append(g[2] + h[2])
 
     ellapsed_time = tm.time() - tic
     print(f"\nSimulation ended. ({ellapsed_time:.2f} s)\n")
