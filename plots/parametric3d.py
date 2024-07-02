@@ -49,7 +49,7 @@ for j, param in enumerate(parameters_set):
         Tx, Ty, Tz = transforms(param)
         T = Tx @ Ty @ Tz
         curves[k, j, :] = (Amp * T @
-            np.array([math.cos(wu * k * dt), math.sin(wu * k * dt)]).T
+            np.array([math.cos(wu * k * dt), math.sin(wu * k * dt), 0]).T
         )
 
 # 3D plot with projections:
@@ -103,14 +103,6 @@ for c, pset in enumerate(parameters_set):
             linewidth=0.3, antialiased=True, alpha=0.5
         )
 
-# Dashed lines to aid on the angles visual representation
-ax.plot([0, Amp], [0, 0], [0, 0], linestyle="--", color="k")
-ax.plot([0, Amp], [0, 0], [0, 1000 * Amp], linestyle="--", color="k")
-ax.plot([0, 0], [0, -wu * Amp], [0, 0], linestyle="--", color="k")
-Tx, Ty, Tz = transforms(parameters_set[2])
-yaxis_trans = Tx @ Ty @ Tz @ np.array([0, -Amp])
-ax.plot([0, yaxis_trans[0]], [0, yaxis_trans[1]],
-        [0, yaxis_trans[2]], linestyle="--", color="k")
 
 # Log from Pinocchio simulation
 ax.plot(task_impedance_ts[:, 1],
@@ -131,4 +123,43 @@ ax.set_xlabel("$e_x$", fontdict=font)
 plt.legend(loc="upper center", fontsize="small",
            ncols=1, bbox_to_anchor=(0.07, 1.00)
 )
+plt.show(block=False)
+
+ax2 = plt.figure().add_subplot(
+    projection="3d", xticklabels=[], yticklabels=[], zticklabels=[]
+)
+ax2.set_proj_type("ortho")
+ax2.set_aspect("equal")
+
+parameters_set = [
+    {"Kd": 0, "Dd": 0.0, "Md": 0, "wu": 1.5},
+    {"Kd": 1, "Dd": 0.0, "Md": 0, "wu": 1.5},
+    {"Kd": 1, "Dd": 0.3, "Md": 0, "wu": 1.5},
+]
+
+ax2.plot([0, 1], [0, 0], [0, 0], linestyle="-", color="blue")
+ax2.plot([0, 0], [0, 1], [0, 0], linestyle="-", color="blue")
+ax2.plot([0, 0], [0, 0], [0, 1], linestyle="-", color="blue")
+
+Tx, Ty, Tz = transforms(parameters_set[0])
+Basis = Tx @ Ty @ Tz
+
+ax2.plot([0, Basis[0,0]], [0, Basis[0,1]], [0, Basis[0,2]], linestyle="--", color="grey")
+ax2.plot([0, Basis[1,0]], [0, Basis[1,1]], [0, Basis[1,2]], linestyle="--", color="grey")
+ax2.plot([0, Basis[2,0]], [0, Basis[2,1]], [0, Basis[2,2]], linestyle="--", color="grey")
+
+Tx, Ty, Tz = transforms(parameters_set[1])
+Basis = Tx @ Ty @ Tz
+
+ax2.plot([0, Basis[0,0]], [0, Basis[0,1]], [0, Basis[0,2]], linestyle="--", color="green")
+ax2.plot([0, Basis[1,0]], [0, Basis[1,1]], [0, Basis[1,2]], linestyle="--", color="green")
+ax2.plot([0, Basis[2,0]], [0, Basis[2,1]], [0, Basis[2,2]], linestyle="--", color="green")
+
+Tx, Ty, Tz = transforms(parameters_set[2])
+Basis = Tx @ Ty @ Tz
+
+ax2.plot([0, Basis[0,0]], [0, Basis[0,1]], [0, Basis[0,2]], linestyle="--", color="darkviolet")
+ax2.plot([0, Basis[1,0]], [0, Basis[1,1]], [0, Basis[1,2]], linestyle="--", color="darkviolet")
+ax2.plot([0, Basis[2,0]], [0, Basis[2,1]], [0, Basis[2,2]], linestyle="--", color="darkviolet")
+
 plt.show(block=True)

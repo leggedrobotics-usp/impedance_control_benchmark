@@ -62,6 +62,6 @@ def transforms(arg_dict):
     R21 = D * sigma_2 / sigma_1
     R22 = wu * sigma_1
     
-    Tz = np.array([[R11, R12], [R21, R22], [0, 0]])
+    Tz = np.array([[R11, R12, 0], [R21, R22, 0], [0, 0, 1]])
 
     return Tx, Ty, Tz
