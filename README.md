@@ -2,7 +2,8 @@
 Welcome to the Impedance Control Benchmark project. This project is dedicated to characterizing the impedance control method in robotics.
 
 
-https://github.com/leggedrobotics-usp/impedance_control_benchmark/assets/44267124/cc43f1ea-3c01-45d9-a67f-17c87a994d7a
+[impedance_control_demo.webm](https://github.com/leggedrobotics-usp/impedance_control_benchmark/assets/44267124/6fbf650b-2feb-4efe-84b0-c8472888b0c4)
+
 
 
 The primary focus is on proposing a Python-based toolset that relies on the Pinocchio rigid body dynamics library (Python wrappers), Numpy, and Matplotlib. 
