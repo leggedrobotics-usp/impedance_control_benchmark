@@ -5,7 +5,7 @@
 # This program is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License 3.0,
 # or later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,16 +15,18 @@ import pinocchio as pin
 import numpy as np
 import time as tm
 import math
-from math import pi as pie
+from math import pi
 import matplotlib.pyplot as plt
 from pinocchio.visualize import MeshcatVisualizer
 import example_robot_data
 
 
-controller = 4  # Choose the impedance controller
+controller = 1  # Choose the impedance controller
 plotting = True  # dismiss plot if false
 savefile = False  # dismiss log save if false
-open_viewer = False  # false if the viewer tab is already open (http://127.0.0.1:7000/static/)
+open_viewer = (
+    False  # false if the viewer tab is already open (http://127.0.0.1:7000/static/)
+)
 
 robot = example_robot_data.load("ur5")
 viz = MeshcatVisualizer()
@@ -35,7 +37,7 @@ robot.loadViewerModel()
 NQ, NV = robot.model.nq, robot.model.nv
 end_effector = robot.model.getFrameId("ee_link")
 
-q = np.array([0.00, -1.00, 1.00, -pie, -pie / 2, 0])
+q = np.array([0.00, -1.00, 1.00, -pi, -pi / 2, 0])
 dq = np.zeros(robot.model.nv)
 ddq = np.zeros(robot.model.nv)
 tau = np.zeros(robot.model.nq)
@@ -55,14 +57,14 @@ if controller == 2:
     # Damping design, D = 2 * sqrt(K*M) * zeta:
     zeta = 1.0
     Dd = 2 * np.sqrt(Kd @ Md) * zeta  # Damping
-if controller == 3 or controller == 4: # 1st order impedance
+if controller == 3 or controller == 4:  # 1st order impedance
     Kd = np.diag([2500, 2500, 2500, 150, 150, 188])  # Stiffnes
     Dd = np.diag([125, 100, 100, 0.6, 0.6, 0.8])  # Damping
-if controller == 5:
+if controller == 1 or controller == 5:
     q_des = q
     dq_des = np.zeros(robot.model.nv)
     ddq_des = np.zeros(robot.model.nv)
-    
+
 # Simulation time parameters
 sim_duration = 4.00  # [s]
 sim_steps = int(sim_duration / sim_dt)
@@ -88,9 +90,7 @@ ur5_payload = 5.00  # [Kg]
 fe_amp = 9.80665 * ur5_payload
 fe_angf = 3.00  # [Hz]
 tau_ext = np.zeros(NQ)
-force_ext = np.array(
-    [-fe_amp, 0, 0, 0, 0, 0]
-)
+force_ext = np.array([-fe_amp, 0, 0, 0, 0, 0])
 
 delta_t = []
 JTpinv = np.zeros((3, NQ))  #
@@ -111,11 +111,14 @@ tau_id_full_j3 = []
 tau_id_part_j1 = []
 tau_id_part_j3 = []
 
-tau_grav_j1 = []
-tau_grav_j3 = []
+tau_nle_j1 = []
+tau_nle_j3 = []
 
 viz.display(q)
-input("Wait the visualizer loading on the browser window or press F5 if already open.\nThen, press any key to start.")
+input(
+    "Wait the visualizer loading on the browser window or reload it if already open.\n"
+    + "Then, press any key here to start."
+)
 try:
     print(f"Simulation started, Controller {controller}. Press CTRL+C to stop.")
     tic = tm.time()
@@ -169,16 +172,16 @@ try:
         if dynamic_ref:
             ref_freq = 0.3
             ref_ampl = 0.10
-            mov_ee_angle = 2 * pie * ref_freq * sim_time
+            mov_ee_angle = 2 * pi * ref_freq * sim_time
             x_desired[1] = ref_ampl * math.cos(mov_ee_angle) + 0.1091
             x_desired[2] = ref_ampl * math.sin(mov_ee_angle) + 0.5414
-            v_desired[1] = -(2 * pie * ref_freq) * ref_ampl * math.sin(mov_ee_angle)
-            v_desired[2] = (2 * pie * ref_freq) * ref_ampl * math.cos(mov_ee_angle)
+            v_desired[1] = -(2 * pi * ref_freq) * ref_ampl * math.sin(mov_ee_angle)
+            v_desired[2] = (2 * pi * ref_freq) * ref_ampl * math.cos(mov_ee_angle)
             a_desired[1] = (
-                -((2 * pie * ref_freq) ** 2) * ref_ampl * math.cos(mov_ee_angle)
+                -((2 * pi * ref_freq) ** 2) * ref_ampl * math.cos(mov_ee_angle)
             )
             a_desired[2] = (
-                -((2 * pie * ref_freq) ** 2) * ref_ampl * math.sin(mov_ee_angle)
+                -((2 * pi * ref_freq) ** 2) * ref_ampl * math.sin(mov_ee_angle)
             )
 
         # Disturbance:
@@ -187,48 +190,46 @@ try:
             tau_ext = J.T @ force_ext
 
         ## Control ##
+        x_err = np.concatenate([x_desired - x, pin.rpy.matrixToRpy(Ree_des @ Ree.T)])
+        v_err = v_desired - v
 
         if controller == 0:  # No controller
             tau = np.zeros(NQ) + h
 
+        if controller == 1:
+            # [T. Boaventura, 2012]: Joint Space PD
+            Kp = np.diag([2000, 400, 400, 400, 5000, 10000])
+            Kd = np.diag([10, 40, 40, 40, 10, 10])
+            joint_impedance = Kp.dot(q_des - q) + Kd.dot(dq_des - dq)
+            tau_id_part_j1.append(joint_impedance[1])
+            tau_id_part_j3.append(joint_impedance[3])
+            joint_impedance = M @ joint_impedance
+            tau_id_full_j1.append(joint_impedance[1])
+            tau_id_full_j3.append(joint_impedance[3])
+            tau = M @ ddq_des + h + joint_impedance
+
         if controller == 2:
             # [Ott,2008]: Classical Impedance Controler Eq. 3.14
-            x_err = np.concatenate(
-                [x_desired - x, pin.rpy.matrixToRpy(Ree_des @ Ree.T)]
-            )
-            v_err = v_desired - v
-            impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             Ji = np.linalg.inv(J)
+            impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             IR = M @ Md_inv  # Inertial Ratio
-            interaction_port = (J.T @ IR) @ (impedance_force + force_ext) - J.T @ force_ext
-            inverse_dyn_partial = M @ J @ a_desired + (h - g) @ Ji @ v_desired
+            interaction_port = (J.T @ IR) @ (
+                impedance_force + force_ext
+            ) - J.T @ force_ext
             inverse_dyn = M @ J @ a_desired + (h - g - M @ Ji @ dJ) @ Ji @ v_desired
-            tau_id_full_j1.append(inverse_dyn[1])
-            tau_id_full_j3.append(inverse_dyn[3])
-            tau_id_part_j1.append(inverse_dyn_partial[1])
-            tau_id_part_j3.append(inverse_dyn_partial[3])
             tau = inverse_dyn + interaction_port
 
         if controller == 3:
             # [Ott,2008]: Classical Impedance Controler (No Inertia) Eq. 3.18
-            x_err = np.concatenate(
-                [x_desired - x, pin.rpy.matrixToRpy(Ree_des @ Ree.T)]
-            )
-            v_err = v_desired - v
-            impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             Ji = np.linalg.inv(J)
-            tau = (
-                M @ J @ a_desired
-                + (h - g - M @ Ji @ dJ) @ Ji @ v_desired
-                + J.T @ impedance_force
-            )
+            impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
+            interaction_port = J.T @ impedance_force
+            inverse_dyn = M @ J @ a_desired + (h - g - M @ Ji @ dJ) @ Ji @ v_desired
+            tau = inverse_dyn + interaction_port
 
         if controller == 4:
-            # [Ott,2008]: Classical Impedance Controler with a_d = v_d = 0
-            pos_err = x_desired - x
-            rpy_err = pin.rpy.matrixToRpy(Ree_des @ Ree.T)
-            err = np.concatenate([pos_err, rpy_err])
-            impedance_force = Kd.dot(err) + Dd.dot(-v)
+            # [Ott,2008]: Classical Impedance Controler (No Inertia), and a_d = v_d = 0
+            impedance_force = Kd.dot(x_err) + Dd.dot(v_err)
             tau = J.T @ impedance_force
 
         if controller == 5:
@@ -260,9 +261,9 @@ try:
 
         log_joints.append(q)
         log_torque.append(tau)
-        
-        tau_grav_j1.append(g[1])
-        tau_grav_j3.append(g[3])
+
+        tau_nle_j1.append(g[1] + h[1])
+        tau_nle_j3.append(g[3] + h[3])
 
     ellapsed_time = tm.time() - tic
     print(f"\nSimulation ended. ({ellapsed_time:.2f} s)\n")
@@ -272,14 +273,14 @@ except KeyboardInterrupt:
 
 if plotting:
     plt.figure()
-    plt.plot(log_xee, log_fee)
+    plt.plot(log_xee[2:], log_fee[2:])
     plt.grid()
     # figure wont close running in interactive mode
     plt.show(block=False)
 
     ax = plt.figure().add_subplot(projection="3d")
-    ax.plot(log_xee, log_vee, log_fee)
-    plt.show(block=False)
+    ax.plot(log_xee[2:], log_vee[2:], log_fee[2:])
+    plt.show(block=(not open_viewer))
 
 if savefile:
     np.save("data/ts_data", np.array([log_time, log_xee, log_vee, log_fee, log_aee]).T)
@@ -288,3 +289,18 @@ if savefile:
     torque = np.array(log_torque)
     js_log = np.hstack((time, joints, torque))
     np.save("data/js_data", js_log)
+    if controller == 1:
+        np.save(
+            "data/js_terms",
+            np.array(
+                [
+                    log_time,
+                    tau_nle_j1,
+                    tau_id_part_j1,
+                    tau_id_full_j1,
+                    tau_nle_j3,
+                    tau_id_part_j3,
+                    tau_id_full_j3,
+                ]
+            ).T,
+        )
