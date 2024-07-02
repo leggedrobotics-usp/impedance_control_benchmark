@@ -21,8 +21,8 @@ from pinocchio.visualize import MeshcatVisualizer
 import example_robot_data
 
 
-controller = 1  # Choose the impedance controller
-plotting = True  # dismiss plot if false
+controller = 4  # Choose the impedance controller
+plotting = False  # dismiss plot if false
 savefile = False  # dismiss log save if false
 open_viewer = (
     False  # false if the viewer tab is already open (http://127.0.0.1:7000/static/)
@@ -37,7 +37,7 @@ robot.loadViewerModel()
 NQ, NV = robot.model.nq, robot.model.nv
 end_effector = robot.model.getFrameId("ee_link")
 
-q = np.array([0.00, -1.00, 1.00, -pi, -pi / 2, 0])
+q = np.array([0.00, -1.00, 1.2, -(pi + 0.2), -pi / 2, 0])
 dq = np.zeros(robot.model.nv)
 ddq = np.zeros(robot.model.nv)
 tau = np.zeros(robot.model.nq)
@@ -58,8 +58,8 @@ if controller == 2:
     zeta = 1.0
     Dd = 2 * np.sqrt(Kd @ Md) * zeta  # Damping
 if controller == 3 or controller == 4:  # 1st order impedance
-    Kd = np.diag([2500, 2500, 2500, 150, 150, 188])  # Stiffnes
-    Dd = np.diag([125, 100, 100, 0.6, 0.6, 0.8])  # Damping
+    Kd = np.diag([900, 2500, 2500, 150, 150, 188])  # Stiffnes
+    Dd = np.diag([60, 100, 100, 0.6, 0.6, 0.8])  # Damping
 if controller == 1 or controller == 5:
     q_des = q
     dq_des = np.zeros(robot.model.nv)

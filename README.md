@@ -27,6 +27,9 @@ This is it!
 The simulation setup was design to rely on the `MeshcatVisualizer` running
 on a web browser. Once the simulation starts a new window on your browser will
 display the robot arm and peform the movement according to the [simulation script](./controllers/impedance_6dof.py).
+
+Browser window url: `http://127.0.0.1:7000/static/`
+
 Run the simulation on interactive mode for better experience:
 
 ```sh
