@@ -23,7 +23,7 @@ font = {
     "family": "serif",
     "math_fontfamily": "cm",
     "color": "black",
-    "weight": "semibold",
+    "weight": "normal",
     "size": 14,
 }
 
@@ -34,9 +34,10 @@ steps = math.ceil(2 * math.pi / (dt * wu))
 
 simulation_params = {"Kd": 1000, "Dd": 8, "Md": 0.016, "wu": wu}
 parameters_set = [
-    {"Kd": 0.0, "Dd": 0.00, "Md": 0, "wu": wu},
-    {"Kd": 100, "Dd": 0.00, "Md": 0, "wu": wu},
-    {"Kd": 100, "Dd": 10.0, "Md": 0, "wu": wu},
+    {"Kd": 12, "Dd": 0, "Md": 0, "wu": wu},
+    {"Kd": 12, "Dd": 2, "Md": 0, "wu": wu},
+    {"Kd":  0, "Dd": 2, "Md": 0, "wu": wu},
+    {"Kd": 12, "Dd": 2, "Md": 0, "wu": wu},
 ]
 
 # 1st dim: time, 2nd dim: parameters_set, 3rd dim: {x,y,z}
@@ -53,22 +54,23 @@ for j, param in enumerate(parameters_set):
         )
 
 # 2D Plots
-ax = plt.subplot2grid((1, 2), (0, 0), colspan=1, xticklabels=[], yticklabels=[])
-ax.plot(curves[:, 1, 0], curves[:, 1, 2], label="$k_d$ = 100, $d_d$ = 0")
-ax.plot(curves[:, 2, 0], curves[:, 2, 2], label="$k_d$ = 100, $d_d$ = 10")
-ax.set_xlabel("$e_x$", fontdict=font, va='center')
-ax.set_ylabel("$f_{int}$", fontdict=font, va='center')
-plt.legend(loc="upper center", fontsize="small", ncols=2, bbox_to_anchor=(1.10, 1.16))
+ax = plt.subplot2grid((1, 2), (0, 0), colspan=1)
+ax.plot(curves[:, 0, 0], curves[:, 0, 2], label="$k_d$ = 12, $d_d$ = 0")
+ax.plot(curves[:, 1, 0], curves[:, 1, 2], label="$k_d$ = 12, $d_d$ = 2")
+ax.set_xlabel("$e [m]$", fontdict=font, va='center')
+ax.set_ylabel("$f_{int} [N]$", fontdict=font, va='center')
+ax.tick_params(axis='both', direction='in')
+plt.legend(loc="upper center", fontsize="small", ncols=1, bbox_to_anchor=(0.3, 1.0))
 
-ax2 = plt.subplot2grid((1, 2), (0, 1), colspan=1, xticklabels=[], yticklabels=[])
-ax2.plot(curves[:, 1, 1], curves[:, 1, 2])
-ax2.plot(curves[:, 2, 1], curves[:, 2, 2])
-ax2.set_xlabel("$\dot{e}_x$", fontdict=font, va='center')
-ax2.set_ylabel("$f_{int}$", fontdict=font, va='center')
+ax2 = plt.subplot2grid((1, 2), (0, 1), colspan=1, yticklabels=[])
+ax2.plot(curves[:, 2, 1], curves[:, 2, 2], label="$k_d$ = 0, $d_d$ = 2")
+ax2.plot(curves[:, 3, 1], curves[:, 3, 2], label="$k_d$ = 12, $d_d$ = 2")
+ax2.set_xlabel("$\dot{e} [m/s]$ ", fontdict=font, va='center')
+ax2.tick_params(axis='both', direction='in')
+#ax2.set_ylabel("$f_{int}$", fontdict=font, va='center')
+plt.legend(loc="upper center", fontsize="small", ncols=1, bbox_to_anchor=(0.3, 1.0))
 
-plt.subplots_adjust(
-    top=0.88, bottom=0.11, left=0.125, right=0.9, hspace=0.2, wspace=0.2
-)
+plt.tight_layout()
 plt.show(block=False)
 
 # 3D plot with projections:
@@ -77,7 +79,7 @@ ax = plt.figure().add_subplot(
 )
 ax.set_proj_type("ortho")
 
-curve_color = ["silver" ,"green", "darkviolet"]
+curve_color = ["silver" ,"green", "darkviolet", "blue"]
 projections_offset = 1.45
 projections_alpha  = 0.0
 plot_type = 'surface'
