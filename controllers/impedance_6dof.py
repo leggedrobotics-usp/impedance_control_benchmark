@@ -135,12 +135,12 @@ try:
 
         # Get the end-effector Jacobian
         J = pin.computeFrameJacobian(
-            robot.model, robot.data, q, end_effector, pin.ReferenceFrame.LOCAL
+            robot.model, robot.data, q, end_effector, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED
         )
 
         # End-effector Jacobian derivative (dJ/dt)
         dJ = pin.frameJacobianTimeVariation(
-            robot.model, robot.data, q, dq, end_effector, pin.ReferenceFrame.LOCAL
+            robot.model, robot.data, q, dq, end_effector, pin.ReferenceFrame.LOCAL_WORLD_ALIGNED
         )
 
         # Get ee kinematic data:
