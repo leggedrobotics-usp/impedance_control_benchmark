@@ -46,8 +46,8 @@ end_effector = robot.model.getFrameId("lf_foot")
 q = np.zeros(NQ)
 q[2] =  0.577 # trunk height (z)
 q[7] = -0.15
-q[8] =  0.8
-q[9] = -1.6
+q[8] =  1.0
+q[9] = -2.0
 
 q[10] = -0.15
 q[11] = -0.8
@@ -96,9 +96,9 @@ x_desired = robot.framePlacement(q, end_effector).translation # 3x1
 v_desired = np.zeros(3)
 
 # Disturbance
-disturbance_t = 0.01
-fe_amp = 9.80665 * 1
-fe_angf = 0.25  # [Hz]
+disturbance_t = 0.02
+fe_amp = 20
+fe_angf = math.pi  # [rad/s]
 tau_ext = np.zeros(NV)
 force_ext = np.array([0, 0, 0, 0, 0, 0])
 
@@ -152,8 +152,8 @@ try:
         
         # Disturbance:
         if sim_time > disturbance_t:
-            #force_ext[2] = fe_amp * math.sin(fe_angf * sim_time)
-            force_ext[1] = 10
+            force_ext[2] = fe_amp * math.sin(fe_angf * sim_time)
+            #force_ext[2] = -20
             tau_ext = J.T @ force_ext
 
         # joint space controller on the other legs
